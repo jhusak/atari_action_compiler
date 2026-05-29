@@ -50,7 +50,7 @@ static void push16(uint16_t pushval) {
 	push8(pushval>>8);
 	push8(pushval);
 }
-static uint16_t pull16() {
+uint16_t pull16() {
     return pull8() | (pull8()<<8);
 }
 
@@ -84,7 +84,8 @@ static void absy() {
 static void ind() {
     ea = read6502word(PC);
     uint16_t ea2 = (ea & 0xff00) | ((ea + 1) & 0xff); // page wrap bug!
-    ea = read6502(ea) | (read6502(ea2) << 8);
+    ea = read6502(ea) | (((uint16_t)read6502(ea2)) << 8);
+    //printf("EA: %04x\n",ea);
     PC += 2;
 }
 

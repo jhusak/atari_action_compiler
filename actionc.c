@@ -1,0 +1,736 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include <unistd.h>
+#include <time.h>
+#include <termios.h>
+#include <fcntl.h>
+#include <ctype.h>
+
+/*
+ * actionwrap.c
+ *
+ * Wrapper dla fake6502 + ACTION!
+ *
+ * build:
+ *   cc actionwrap.c fake6502.c -o action6502
+ *
+ * usage:
+ *   ./action6502 input.act output.xex
+ *
+ *   ./action6502 input.act output.xex \
+ *       -m 0x4000 0x12 \
+ *       -m 0x4001 0x34
+ *
+ * Założenia:
+ * - fake6502 dostarcza:
+ *      reset6502()
+ *      step6502()
+ *
+ * - ACTION! binary:
+ *      action.bin
+ *
+ * - ładowanie:
+ *      0x2000
+ *
+ * - reset vector:
+ *      $FFFC/$FFFD -> 0x2000
+ *
+ * - host API:
+ *
+ *      $FFF0 = open
+ *      $FFF3 = close
+ *      $FFF6 = readline
+ *      $FFF9 = write
+ *      $FFFC = exit
+ *
+ * - emulator musi eksportować:
+ *
+ *      extern uint8_t memory[65536];
+ *      extern uint16_t PC;
+ *
+ */
+
+
+#include "fake6502.h"
+
+#define RAM_SIZE        65536
+#define ACTION_LOAD     0x2000
+
+#define HOST_OPEN       0xFFF0
+#define HOST_CLOSE      0xFFF3
+#define HOST_READLINE   0xFFF6
+#define HOST_WRITE      0xFFF9
+#define HOST_EXIT       0xFFFC
+
+extern uint8_t memory[65536];
+extern uint16_t PC;
+extern uint8_t A;
+extern uint8_t X;
+extern uint8_t Y;
+extern uint8_t SP;
+
+/* ========================================================= */
+
+uint8_t memory[65536];
+
+#include "inc/asciitoatari.c"
+#include "inc/memory.c"
+#include "inc/action_36.c"
+typedef uint8_t UBYTE;
+#include "inc/altirraos_xl.c"
+//#include "inc/atariosxl.c"
+
+uint8_t ascii_to_screen(uint8_t c)
+{
+	if (c < 32)
+		return c + 64;
+
+	if (c < 96)
+		return c - 32;
+
+	return c;
+}
+
+/*
+   Atari SCREEN CODE -> ASCII
+   */
+
+uint8_t screen_to_ascii(uint8_t c)
+{
+	if (c < 64)
+		return c + 32;
+
+	if (c < 96)
+		return c - 64;
+
+	return c;
+}
+
+void wypisz_ekran()
+{
+        // Sterowanie ekranem kodami ANSI
+        printf("\x1B[2J"); // clear screen
+        printf("\x1B[H");  // home cursor
+
+	for (int y = 0; y < 24; y++)
+	{
+		for (int x = 0; x < 40; x++)
+		{
+			putchar(screen_to_ascii(read6502(0x9c40+x+y*40)&0x7f));
+		}
+		putchar('\n');
+	}
+}
+
+
+
+
+int bankA000_offset=0x1000;
+
+uint8_t read6502(uint16_t address) {
+	if (address>=0xc000 && address<0xd000)
+		return atarios_bin[address-0xc000];
+	if (address>=0xd800)
+		return atarios_bin[address-0xc000];
+
+	// banking
+	if (address>=0xa000 && address<0xb000)
+	{
+		return action_bin[address-0xa000+bankA000_offset];
+	}
+	// constant place
+	if (address>=0xb000 && address<0xc000)
+	{
+		return action_bin[address-0xb000];
+	}
+	if (address==0xd013) return 1; // cart on
+	if (address==0xd01f) return 7; // no consol pressed
+	if (address==0xd40b) return memory[address]; // vcount
+	if (address==0xd40e) return memory[address]; // vcount
+	if (address==0xd40f) return memory[address]; // vcount
+	if (address==0xd500) { bankA000_offset=0x1000; return 0xff; }
+	if (address==0xd503) { bankA000_offset=0x3000; return 0xff; }
+	if (address==0xd509) { bankA000_offset=0x2000; return 0xff; }
+
+    return memory[address];
+}
+
+void write6502(uint16_t address, uint8_t value) {
+	if (address==0xd500) { bankA000_offset=0x1000; return; }
+	if (address==0xd503) { bankA000_offset=0x3000; return; }
+	if (address==0xd509) { bankA000_offset=0x2000; return; }
+	if (address>0xD000 && address<0xD800) { memory[address]=value ; return; }
+	if (address <0xA000) memory[address] = value;
+}
+
+/* ========================================================= */
+static FILE *fin  = NULL;
+static FILE *fout = NULL;
+
+static int running = 1;
+
+/* ========================================================= */
+
+static void fatal(const char *msg)
+{
+    fprintf(stderr, "fatal: %s\n", msg);
+    exit(1);
+}
+
+/* ========================================================= */
+
+static void save_memory_full()
+{
+    FILE *f;
+    long size;
+
+    f = fopen("memfull.sav", "wb");
+
+    if (!f)
+        fatal("cannot open file memfull.sav");
+
+    for (int i=0; i<65536; i++)
+    {
+	    uint8_t c=read6502(i);
+	    fwrite(&c, 1, 1, f);
+    }
+
+    fclose(f);
+}
+
+static void save_memory()
+{
+    FILE *f;
+    long size;
+
+    f = fopen("mem.sav", "wb");
+
+    if (!f)
+        fatal("cannot open file mem.sav");
+
+    fwrite(&memory[0], 1, 0xa000, f);
+
+    fclose(f);
+}
+
+static void load_binary(const char *path, uint16_t addr)
+{
+    FILE *f;
+    long size;
+
+    f = fopen(path, "rb");
+
+    if (!f)
+        fatal("cannot open action.bin");
+
+    fseek(f, 0, SEEK_END);
+    size = ftell(f);
+    fseek(f, 0, SEEK_SET);
+
+    if ((addr + size) >= RAM_SIZE)
+        fatal("binary too large");
+
+    fread(&memory[addr], 1, size, f);
+
+    fclose(f);
+
+    fprintf(stderr,
+        "loaded %ld bytes at $%04X\n",
+        size,
+        addr);
+}
+
+/* ========================================================= */
+
+static void set_reset_vector(uint16_t addr)
+{
+    write6502(0xFFFC, addr & 0xFF);
+    write6502(0xFFFD, addr >> 8);
+}
+
+/* ========================================================= */
+
+/*
+ * bardzo prosty host_open/host_close
+ *
+ * handle 0 = input.act
+ * handle 1 = output
+ * handle >=2 = include files
+ *
+ * ACTION string:
+ *   [len][ascii...]
+ */
+
+#define MAX_HANDLES 16
+
+static FILE *handles[MAX_HANDLES];
+
+/* ========================================================= */
+
+static void action_string_to_c(
+    uint16_t ptr,
+    char *out,
+    size_t outsz)
+{
+    uint8_t len;
+
+    len = read6502(ptr);
+
+    if (len >= outsz)
+        len = (uint8_t)(outsz - 1);
+
+    ptr++;
+    for (uint8_t i=0; i<len; i++) out[i]=read6502(ptr+i);
+
+    //memcpy(out, &memory[ptr + 1], len);
+
+    out[len] = 0;
+}
+
+/* ========================================================= */
+
+static void host_open(void)
+{
+    uint16_t ptr;
+    char path[512];
+    FILE *f;
+    int handle;
+
+    /*
+     * A/X -> ACTION string
+     */
+
+    ptr = ((uint16_t)X << 8) | A;
+
+    action_string_to_c(ptr, path, sizeof(path));
+
+    fprintf(stderr,
+        "[HOST_OPEN] \"%s\"\n",
+        path);
+
+    /*
+     * znajdź wolny handle
+     */
+
+    for (handle = 2;
+         handle < MAX_HANDLES;
+         handle++) {
+
+        if (!handles[handle])
+            break;
+    }
+
+    if (handle >= MAX_HANDLES) {
+
+        A = 1;      /* error */
+        return;
+    }
+
+    f = fopen(path, "r");
+
+    if (!f) {
+
+        fprintf(stderr,
+            "cannot open include: %s\n",
+            path);
+
+        A = 1;
+        return;
+    }
+
+    handles[handle] = f;
+
+    /*
+     * zwrot:
+     *   A = status
+     *   Y = handle
+     */
+
+    A = 0;
+    Y = (uint8_t)handle;
+}
+
+/* ========================================================= */
+
+static void host_close(void)
+{
+    int handle;
+
+    /*
+     * Y = handle
+     */
+
+    handle = Y;
+
+    fprintf(stderr,
+        "[HOST_CLOSE] handle=%d\n",
+        handle);
+
+    if (handle < 2 ||
+        handle >= MAX_HANDLES)
+        return;
+
+    if (handles[handle]) {
+
+        fclose(handles[handle]);
+
+        handles[handle] = NULL;
+    }
+
+    A = 0;
+}
+
+static void host_readline(void)
+{
+    /*
+     * ACTION! oczekuje:
+     *
+     * [len][ascii...]
+     *
+     * ptr buffera:
+     *   A/X
+     */
+
+    uint16_t ptr=0;
+    char line[512];
+    size_t len;
+    FILE * src;
+
+
+    if (Y == 0)
+	    src = fin;
+    else
+	    src = handles[Y];
+
+    if (!src) {
+	    write6502(ptr, 0);
+	    return;
+    }
+
+    ptr = ((uint16_t)X << 8) | A;
+
+    if (!fgets(line, sizeof(line), src)) {
+
+	    write6502(ptr, 0);
+
+        return;
+    }
+
+    len = strlen(line);
+
+    while (len > 0 &&
+          (line[len - 1] == '\n' ||
+           line[len - 1] == '\r')) {
+
+        line[--len] = 0;
+    }
+
+    if (len > 255)
+        len = 255;
+
+    write6502(ptr, (uint8_t)len);
+
+    ptr++;
+    //memcpy(&memory[ptr + 1], line, len);
+    for (uint8_t i=0; i<len; i++) write6502(ptr+i,line[i]);
+
+    fprintf(stderr,
+        "[READLINE] \"%s\"\n",
+        line);
+}
+
+static void host_write(void)
+{
+    /*
+     * ACTION string:
+     *
+     * [len][ascii...]
+     */
+
+    uint16_t ptr;
+    uint8_t len;
+
+    ptr = ((uint16_t)X << 8) | A;
+
+    len = read6502(ptr);
+    //fwrite(&memory[ptr + 1], 1, len, fout);
+    for (uint8_t i=0; i<len; i++) putc(read6502(++ptr),fout);
+    
+
+    fputc('\n', fout);
+
+    fflush(fout);
+}
+
+static void host_exit(void)
+{
+    fprintf(stderr, "[HOST_EXIT]\n");
+
+    running = 0;
+}
+
+/* ========================================================= */
+
+static int intercept_jsr(void)
+{
+    switch (PC) {
+
+        case HOST_OPEN:
+            host_open();
+            return 1;
+
+        case HOST_CLOSE:
+            host_close();
+            return 1;
+
+        case HOST_READLINE:
+            host_readline();
+            return 1;
+
+        case HOST_WRITE:
+            host_write();
+            return 1;
+
+        case HOST_EXIT:
+            host_exit();
+            return 1;
+    }
+
+    return 0;
+}
+
+static void handle_sigint(int sig) {
+        (void)sig;
+	running=0;
+}
+
+/* ========================================================= */
+
+static void run_emulator(void)
+{
+	long cycles = 0;
+	struct timespec next_time;
+	struct timespec now;
+	int cnt=0;
+
+	/* pobierz aktualny czas */
+
+	clock_gettime(CLOCK_MONOTONIC, &next_time);
+ 
+
+
+	/* dodaj 1/50 sekundy = 20 000 000 ns */
+	next_time.tv_nsec += 20000000;
+
+	if (next_time.tv_nsec >= 1000000000)
+	{
+		next_time.tv_sec++;
+		next_time.tv_nsec -= 1000000000;
+	}
+
+	//write6502(0x8, 0xff);
+	//write6502(0x9, 0);
+	//write6502(0x244, 0);
+	write6502(0x496, 1);
+
+
+	while (running) {
+
+
+		if (PC>=HOST_OPEN && intercept_jsr()) {
+
+			/*
+			 * symulacja RTS
+			 */
+
+			PC = pull16();
+			PC++;
+			continue;
+		}
+
+		//fprintf(stderr,"%04x\n",PC);
+		step6502();
+
+		cycles++;
+
+		if ((cycles % 100) != 0) continue;
+
+		if ((cycles % 100000000) == 0) {
+
+			fprintf(stderr,
+					"instrs=%ld PC=%04X\n",
+					cycles,
+					PC);
+		}
+
+		clock_gettime(CLOCK_MONOTONIC, &now);
+
+		if  (
+				now.tv_sec > next_time.tv_sec ||
+				(now.tv_sec == next_time.tv_sec &&
+				 now.tv_nsec > next_time.tv_nsec)
+		    )
+		{
+			/* dodaj 1/7800 sekundy = 128200 ns */
+
+			++cnt;
+			next_time.tv_nsec += 128200;
+
+			if (next_time.tv_nsec >= 1000000000UL)
+			{
+				next_time.tv_sec++;
+				next_time.tv_nsec -= 1000000000UL;
+			}
+
+			write6502(0x3A, 1);
+			write6502(0x39, 1);
+			if (cnt>156*50*5)
+				write6502(66,0);
+
+
+			if (++memory[0xd40b]==156) {
+				memory[0xd40b]=0;
+				//if (memory[0xd40e]&0x40)
+				//if (cnt>156*50)
+				//	nmi6502();	
+				wypisz_ekran();
+				memory[20]++;
+				if (!memory[20]) memory[19]++;
+				if (!memory[20] && !memory[19]) memory[18]++;
+
+
+				int c = getchar();
+
+				if(c != EOF)
+				{
+					fprintf(stderr,"\rASCII: %d\n",c);
+					if(c == 10) c=0x9b;
+					for (uint8_t i =0; i<127; i++) {
+						if  (key_to_ascii[i]==c)
+						{
+							memory[764]=i;
+							break;
+						}
+					}
+
+
+
+					if(c == 27)
+						break;
+				}
+			}
+
+#if 0
+			if (cnt>50*156) {
+				cnt=0;
+				save_memory();
+				save_memory_full();
+				printf("SAVED MEMORY\n");
+				usleep(1000000);
+			}
+#endif
+
+		}
+
+	}
+}
+
+/* ========================================================= */
+
+static void usage(const char *prog)
+{
+	fprintf(stderr,
+			"usage:\n"
+			"  %s input.act output.txt [-m addr val]\n",
+			prog);
+
+	exit(1);
+}
+
+/* ========================================================= */
+
+int main(int argc, char **argv)
+{
+	int i;
+
+	if (argc < 3)
+		usage(argv[0]);
+
+	fin = fopen(argv[1], "r");
+
+	if (!fin)
+		fatal("cannot open input");
+
+	fout = fopen(argv[2], "w");
+
+	if (!fout)
+		fatal("cannot open output");
+
+	/*
+	 * optional memory pokes
+	 */
+
+	for (i = 3; i < argc; i++) {
+
+		if (strcmp(argv[i], "-m") == 0) {
+
+			uint16_t addr;
+			uint8_t val;
+
+			if ((i + 2) >= argc)
+				fatal("missing -m args");
+
+			addr = (uint16_t)strtoul(argv[i + 1], NULL, 0);
+			val  = (uint8_t)strtoul(argv[i + 2], NULL, 0);
+
+			write6502(addr, val);
+
+			fprintf(stderr,
+					"poke $%04X = $%02X\n",
+					addr,
+					val);
+
+			i += 2;
+		}
+	}
+
+        signal(SIGINT, handle_sigint);
+
+
+	struct termios t,told;
+
+	tcgetattr(0, &t);
+	told=t;
+
+	t.c_lflag &= ~(ICANON | ECHO);
+
+	tcsetattr(0, TCSANOW, &t);
+
+	int oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+
+	fcntl(0, F_SETFL, oldf | O_NONBLOCK);
+
+
+
+	reset6502();
+
+	memcpy(memory,memdump_dat,sizeof(memdump_dat));
+
+	PC=0xb7e7;
+
+	run_emulator();
+
+	fclose(fin);
+	fclose(fout);
+
+	save_memory();
+	save_memory_full();
+
+	// restore terminal
+	tcsetattr(0, TCSANOW, &told);
+	fcntl(0, F_SETFL, oldf);
+
+	return 0;
+}
