@@ -18,7 +18,7 @@ static void (*optable[256])();
 
 uint16_t PC;
 uint8_t SP, A, X, Y;
-static bool C, Z, I, D, V, N;
+bool C, Z, I, D, V, N;
 static uint16_t ea;
 static uint8_t opcode;
 
@@ -54,7 +54,7 @@ uint16_t pull16() {
     return pull8() | (pull8()<<8);
 }
 
-static uint16_t read6502word(uint16_t addr) {
+uint16_t read6502word(uint16_t addr) {
     return read6502(addr) | (read6502(addr+1) << 8);
 }
 

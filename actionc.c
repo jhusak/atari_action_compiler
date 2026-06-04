@@ -165,6 +165,14 @@ void write6502(uint16_t address, uint8_t value) {
 	if (address <0xA000) memory[address] = value;
 }
 
+void write6502word(uint16_t address, uint16_t value)
+{
+	write6502(address,value&0xff);
+	write6502(address+1,(value>>8)&0xff );
+
+
+}
+
 /* ========================================================= */
 static FILE *fin  = NULL;
 static FILE *fout = NULL;
