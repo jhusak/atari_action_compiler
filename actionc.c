@@ -205,7 +205,6 @@ static void fatal(const char *msg)
 static void save_memory_full()
 {
     FILE *f;
-    long size;
 
     f = fopen("memfull.sav", "wb");
 
@@ -224,7 +223,6 @@ static void save_memory_full()
 static void save_memory()
 {
     FILE *f;
-    long size;
 
     f = fopen("mem.sav", "wb");
 
@@ -236,32 +234,6 @@ static void save_memory()
     fclose(f);
 }
 
-static void load_binary(const char *path, uint16_t addr)
-{
-    FILE *f;
-    long size;
-
-    f = fopen(path, "rb");
-
-    if (!f)
-        fatal("cannot open action.bin");
-
-    fseek(f, 0, SEEK_END);
-    size = ftell(f);
-    fseek(f, 0, SEEK_SET);
-
-    if ((addr + size) >= RAM_SIZE)
-        fatal("binary too large");
-
-    fread(&memory[addr], 1, size, f);
-
-    fclose(f);
-
-    fprintf(stderr,
-        "loaded %ld bytes at $%04X\n",
-        size,
-        addr);
-}
 
 /* ========================================================= */
 
@@ -283,10 +255,6 @@ static void set_reset_vector(uint16_t addr)
  * ACTION string:
  *   [len][ascii...]
  */
-
-#define MAX_HANDLES 16
-
-static FILE *handles[MAX_HANDLES];
 
 /* ========================================================= */
 
@@ -310,180 +278,7 @@ static void action_string_to_c(
     out[len] = 0;
 }
 
-/* ========================================================= */
 
-static void host_open(void)
-{
-    uint16_t ptr;
-    char path[512];
-    FILE *f;
-    int handle;
-
-    /*
-     * A/X -> ACTION string
-     */
-
-    ptr = ((uint16_t)X << 8) | A;
-
-    action_string_to_c(ptr, path, sizeof(path));
-
-    fprintf(stderr,
-        "[HOST_OPEN] \"%s\"\n",
-        path);
-
-    /*
-     * znajdź wolny handle
-     */
-
-    for (handle = 2;
-         handle < MAX_HANDLES;
-         handle++) {
-
-        if (!handles[handle])
-            break;
-    }
-
-    if (handle >= MAX_HANDLES) {
-
-        A = 1;      /* error */
-        return;
-    }
-
-    f = fopen(path, "r");
-
-    if (!f) {
-
-        fprintf(stderr,
-            "cannot open include: %s\n",
-            path);
-
-        A = 1;
-        return;
-    }
-
-    handles[handle] = f;
-
-    /*
-     * zwrot:
-     *   A = status
-     *   Y = handle
-     */
-
-    A = 0;
-    Y = (uint8_t)handle;
-}
-
-/* ========================================================= */
-
-static void host_close(void)
-{
-    int handle;
-
-    /*
-     * Y = handle
-     */
-
-    handle = Y;
-
-    fprintf(stderr,
-        "[HOST_CLOSE] handle=%d\n",
-        handle);
-
-    if (handle < 2 ||
-        handle >= MAX_HANDLES)
-        return;
-
-    if (handles[handle]) {
-
-        fclose(handles[handle]);
-
-        handles[handle] = NULL;
-    }
-
-    A = 0;
-}
-
-static void host_readline(void)
-{
-    /*
-     * ACTION! oczekuje:
-     *
-     * [len][ascii...]
-     *
-     * ptr buffera:
-     *   A/X
-     */
-
-    uint16_t ptr=0;
-    char line[512];
-    size_t len;
-    FILE * src;
-
-
-    if (Y == 0)
-	    src = fin;
-    else
-	    src = handles[Y];
-
-    if (!src) {
-	    write6502(ptr, 0);
-	    return;
-    }
-
-    ptr = ((uint16_t)X << 8) | A;
-
-    if (!fgets(line, sizeof(line), src)) {
-
-	    write6502(ptr, 0);
-
-        return;
-    }
-
-    len = strlen(line);
-
-    while (len > 0 &&
-          (line[len - 1] == '\n' ||
-           line[len - 1] == '\r')) {
-
-        line[--len] = 0;
-    }
-
-    if (len > 255)
-        len = 255;
-
-    write6502(ptr, (uint8_t)len);
-
-    ptr++;
-    //memcpy(&memory[ptr + 1], line, len);
-    for (uint8_t i=0; i<len; i++) write6502(ptr+i,line[i]);
-
-    fprintf(stderr,
-        "[READLINE] \"%s\"\n",
-        line);
-}
-
-static void host_write(void)
-{
-    /*
-     * ACTION string:
-     *
-     * [len][ascii...]
-     */
-
-    uint16_t ptr;
-    uint8_t len;
-
-    ptr = ((uint16_t)X << 8) | A;
-
-    len = read6502(ptr);
-    //fwrite(&memory[ptr + 1], 1, len, fout);
-    for (uint8_t i=0; i<len; i++) putc(read6502(++ptr),fout);
-    
-
-    fputc('\n', fout);
-
-    fflush(fout);
-}
 
 static void host_exit(void)
 {
@@ -558,6 +353,7 @@ static void run_emulator(void)
 	//write6502(0x9, 0);
 	//write6502(0x244, 0);
 
+	int inited=0;
 
 	while (running) {
 
@@ -609,8 +405,8 @@ static void run_emulator(void)
 
 			write6502(0x3A, 1);
 			write6502(0x39, 1);
-			if (cnt>156*50*5)
-				write6502(66,0);
+			//if (cnt>156*50*5)
+			//	write6502(66,0);
 
 
 			if (++memory[0xd40b]==156) {
@@ -618,7 +414,7 @@ static void run_emulator(void)
 				//if (memory[0xd40e]&0x40)
 				//if (cnt>156*50)
 				//	nmi6502();	
-				wypisz_ekran();
+				//wypisz_ekran();
 				memory[20]++;
 				if (!memory[20]) memory[19]++;
 				if (!memory[20] && !memory[19]) memory[18]++;
@@ -644,24 +440,49 @@ static void run_emulator(void)
 						break;
 				}
 				if IS_IDLE() {
+					fprintf(stderr,"running: %d\n",inited);
+
+					if (inited==2) {
+						host_exit();
+					}
+
 					if (compile_frames>0) {
-					fprintf(stderr,"compile frames: %d\n",compile_frames);
-					compile_frames=0;
+						fprintf(stderr,"compile frames: %d\n",compile_frames);
+						compile_frames=0;
+
+
+						if (!inited) {
+							write6502(0x590, 0x08); // len
+							write6502(0x591, 0x43);	// len ascii codes
+							write6502(0x592, 0x22);
+							write6502(0x593, 0x42);
+							write6502(0x594, 0x2E);
+							write6502(0x595, 0x41);
+							write6502(0x596, 0x43);
+							write6502(0x597, 0x54);
+							write6502(0x598, 0x22);
+							write6502(764,12);
+							inited=1;
+						} else if (inited==1) {
+							write6502(0x590, 0x09); // len
+							write6502(0x591, 0x57);	// len ascii codes
+							write6502(0x592, 0x22);
+							write6502(0x593, 0x42);
+							write6502(0x594, 0x42);
+							write6502(0x595, 0x42);
+							write6502(0x596, 0x42);
+							write6502(0x597, 0x42);
+							write6502(0x598, 0x42);
+							write6502(0x599, 0x22);
+							write6502(764,12);
+							inited=2;
+
+						}
 					}
 				}
 				else
 					compile_frames++;
 			}
-
-#if 0
-			if (cnt>50*156) {
-				cnt=0;
-				save_memory();
-				save_memory_full();
-				printf("SAVED MEMORY\n");
-				usleep(1000000);
-			}
-#endif
 
 		}
 
@@ -731,6 +552,7 @@ int main(int argc, char **argv)
 
 	write6502(0x496, GO_TO_COMPILER);
 	write6502(0x4e0, 0x60);
+
 
 	//for (int i=H_DEVICE_BEGIN; i<H_DEVICE_END; i++)
 	//	fprintf(stderr," %02x",read6502(i));

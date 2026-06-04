@@ -57,9 +57,6 @@
 #define MEMORY_dPutWord(x,y)		write6502word(x,y)
 /* H: device emulation --------------------------------------------------- */
 
-/* emulator debugging mode */
-static int devbug = FALSE;
-
 /* host path for each H: unit */
 char Devices_atari_h_dir[FILENAME_MAX];
 
@@ -257,11 +254,6 @@ static int Devices_GetIOCB(void)
 	}
 	h_iocb = CPU_regX >> 4;
 	return TRUE;
-}
-
-static int Devices_GetNumber(int set_textmode)
-{
-	return 0;
 }
 
 void Util_catpath(char *result, const char *path1, const char *path2)
