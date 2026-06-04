@@ -78,6 +78,8 @@ typedef uint8_t UBYTE;
 #include "inc/altirraos_xl.c"
 //#include "inc/atariosxl.c"
 
+#define IS_IDLE() (PC>=0xa2e6 && PC<=0xa2ef)
+
 uint8_t ascii_to_screen(uint8_t c)
 {
 	if (c < 32)
@@ -521,6 +523,7 @@ static int intercept_jsr(void)
     return 0;
 }
 
+
 static void handle_sigint(int sig) {
         (void)sig;
 	running=0;
@@ -535,6 +538,7 @@ static void run_emulator(void)
 	struct timespec now;
 	int cnt=0;
 
+	int compile_frames=0;
 	/* pobierz aktualny czas */
 
 	clock_gettime(CLOCK_MONOTONIC, &next_time);
@@ -639,6 +643,14 @@ static void run_emulator(void)
 					if(c == 27)
 						break;
 				}
+				if IS_IDLE() {
+					if (compile_frames>0) {
+					fprintf(stderr,"compile frames: %d\n",compile_frames);
+					compile_frames=0;
+					}
+				}
+				else
+					compile_frames++;
 			}
 
 #if 0
@@ -718,6 +730,7 @@ int main(int argc, char **argv)
 	Devices_Frame();
 
 	write6502(0x496, GO_TO_COMPILER);
+	write6502(0x4e0, 0x60);
 
 	//for (int i=H_DEVICE_BEGIN; i<H_DEVICE_END; i++)
 	//	fprintf(stderr," %02x",read6502(i));
