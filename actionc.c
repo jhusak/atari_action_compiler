@@ -54,15 +54,17 @@
 
 
 #include "fake6502.h"
+#include "devices.h"
 
+#define GO_TO_COMPILER	1
 #define RAM_SIZE        65536
-#define ACTION_LOAD     0x2000
+//#define ACTION_LOAD     0x2000
 
-#define HOST_OPEN       0xFFF0
-#define HOST_CLOSE      0xFFF3
-#define HOST_READLINE   0xFFF6
-#define HOST_WRITE      0xFFF9
-#define HOST_EXIT       0xFFFC
+#define H_PATCH_OPEN    0xd150
+#define H_PATCH_CLOSE	0xd153
+#define H_PATCH_READ	0xd156
+#define H_PATCH_WRITE   0xd159
+#define H_PATCH_STATUS	0xd15C
 
 extern uint8_t memory[65536];
 extern uint16_t PC;
@@ -74,7 +76,7 @@ extern uint8_t SP;
 /* ========================================================= */
 
 uint8_t memory[65536];
-
+uint8_t force_write=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
@@ -130,8 +132,18 @@ void wypisz_ekran()
 int bankA000_offset=0x1000;
 
 uint8_t read6502(uint16_t address) {
+	
+	if (force_write)
+		fprintf(stderr,"read addr: %04x > %02x\n", address, memory[address]);
+
+	if (address>=H_DEVICE_BEGIN && address<H_DEVICE_END)
+	{
+		return memory[address];
+	}
 	if (address>=0xc000 && address<0xd000)
 		return atarios_bin[address-0xc000];
+
+
 	if (address>=0xd800)
 		return atarios_bin[address-0xc000];
 
@@ -158,6 +170,9 @@ uint8_t read6502(uint16_t address) {
 }
 
 void write6502(uint16_t address, uint8_t value) {
+	if (force_write) {memory[address]=value; 
+		fprintf(stderr,"Write addr: (%d) %04x < %02x\n",force_write, address, value);
+		}
 	if (address==0xd500) { bankA000_offset=0x1000; return; }
 	if (address==0xd503) { bankA000_offset=0x3000; return; }
 	if (address==0xd509) { bankA000_offset=0x2000; return; }
@@ -483,26 +498,27 @@ static void host_exit(void)
 
 static int intercept_jsr(void)
 {
+
     switch (PC) {
 
-        case HOST_OPEN:
-            host_open();
+        case H_PATCH_OPEN:
+            Devices_H_Open();
             return 1;
 
-        case HOST_CLOSE:
-            host_close();
+        case H_PATCH_CLOSE:
+            Devices_H_Close();
             return 1;
 
-        case HOST_READLINE:
-            host_readline();
+        case H_PATCH_READ:
+            Devices_H_Read();
             return 1;
 
-        case HOST_WRITE:
-            host_write();
+        case H_PATCH_WRITE:
+            Devices_H_Write();
             return 1;
 
-        case HOST_EXIT:
-            host_exit();
+        case H_PATCH_STATUS:
+            Devices_H_Status();
             return 1;
     }
 
@@ -541,13 +557,12 @@ static void run_emulator(void)
 	//write6502(0x8, 0xff);
 	//write6502(0x9, 0);
 	//write6502(0x244, 0);
-	write6502(0x496, 1);
 
 
 	while (running) {
 
 
-		if (PC>=HOST_OPEN && intercept_jsr()) {
+		if (PC>=H_DEVICE_BEGIN && PC<H_DEVICE_END && intercept_jsr()) {
 
 			/*
 			 * symulacja RTS
@@ -613,7 +628,7 @@ static void run_emulator(void)
 
 				if(c != EOF)
 				{
-					fprintf(stderr,"\rASCII: %d\n",c);
+					fprintf(stderr,"ASCII: %d\n",c);
 					if(c == 10) c=0x9b;
 					for (uint8_t i =0; i<127; i++) {
 						if  (key_to_ascii[i]==c)
@@ -669,12 +684,55 @@ int main(int argc, char **argv)
 	fin = fopen(argv[1], "r");
 
 	if (!fin)
-		fatal("cannot open input");
+		fatal("cannot open input file");
 
 	fout = fopen(argv[2], "w");
 
 	if (!fout)
-		fatal("cannot open output");
+		fatal("cannot open output file");
+
+
+        signal(SIGINT, handle_sigint);
+
+
+	struct termios t,told;
+
+	tcgetattr(0, &t);
+	told=t;
+
+	t.c_lflag &= ~(ICANON | ECHO);
+
+	tcsetattr(0, TCSANOW, &t);
+
+	int oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
+
+	fcntl(0, F_SETFL, oldf | O_NONBLOCK);
+
+
+
+
+	memset(memory,0,sizeof(memory));
+	memcpy(memory,memdump_dat,sizeof(memdump_dat));
+	
+	reset6502();
+
+	// PRE-INIT emulator
+	
+	force_write=1;
+	Devices_Frame();
+
+	write6502(0x496, GO_TO_COMPILER);
+
+	//for (int i=H_DEVICE_BEGIN; i<H_DEVICE_END; i++)
+	//	fprintf(stderr," %02x",read6502(i));
+
+	//fprintf(stderr,"\n");
+	//save_memory_full();
+	//tcsetattr(0, TCSANOW, &told);
+	//fcntl(0, F_SETFL, oldf);
+	force_write=0;
+	//exit(0);
+
 
 	/*
 	 * optional memory pokes
@@ -704,30 +762,11 @@ int main(int argc, char **argv)
 		}
 	}
 
-        signal(SIGINT, handle_sigint);
-
-
-	struct termios t,told;
-
-	tcgetattr(0, &t);
-	told=t;
-
-	t.c_lflag &= ~(ICANON | ECHO);
-
-	tcsetattr(0, TCSANOW, &t);
-
-	int oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
-
-	fcntl(0, F_SETFL, oldf | O_NONBLOCK);
-
-
-
-	reset6502();
-
-	memcpy(memory,memdump_dat,sizeof(memdump_dat));
-
+	// cart start address. ram is pre-inited with real startup values
 	PC=0xb7e7;
 
+	// END PRE-INIT
+	
 	run_emulator();
 
 	fclose(fin);
