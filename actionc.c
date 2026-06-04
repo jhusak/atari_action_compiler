@@ -123,6 +123,45 @@ void wypisz_ekran()
 }
 
 
+char * get_error(char * err)
+{
+	uint8_t errn=atoi(err);
+	if (strlen(err)>0)
+		switch (errn) {
+			case 0: 		return "Out of system memory.";
+			case 1: 		return "Missing \" (double quote) \" in a string.";
+			case 2: 		return "Nested Defines. You cannot nest the Define directive.";
+			case 3: 		return "Global variable symbol table full.";
+			case 4: 		return "Local variable symbol table full.";
+			case 5: 		return "Set directive syntax error.";
+			case 6: 		return "Wrong declaration format.";
+			case 7: 		return "Invalid argument list.";
+			case 8: 		return "Variable not declared.";
+			case 9: 		return "A variable was used where a constant of some kind was required.";
+			case 10:		return "Illegal assignment.";
+			case 11:		return "Unknown error. System error routines have been impaired so an error can't be defined.";
+			case 12:		return "Missing THEN";
+			case 13:		return "Missing FI.";
+			case 14:		return "Out of code space.";
+			case 15:		return "Missing DO.";
+			case 16:		return "Missing TO.";
+			case 17:		return "Bad expression. Illegal expression format.";
+			case 18:		return "Unmatched parenthesis.";
+			case 19:		return "Missing OD.";
+			case 20:		return "Can't allocate memory.";
+			case 21:		return "Illegal array reference.";
+			case 22:		return "Input file too large. Break it up.";
+			case 23:		return "Illegal conditional statement.";
+			case 24:		return "Illegal FOR statement syntax.";
+			case 25:		return "Illegal EXIT. No DO - OD loop for the EXIT to EXIT out of.";
+			case 26:		return "Nesting too deep (16 levels maximum).";
+			case 27:		return "Illegal TYPE syntax.";
+			case 28:		return "Illegal RETURN.";
+			case 61:		return "Out of Symbol Table space.";
+			case 128:		return "BREAK key was used to stop program execution.";
+			default:		return "";
+		}
+}
 
 
 int bankA000_offset=0x1000;
@@ -282,7 +321,7 @@ static void action_string_to_c(
 
 static void host_exit(void)
 {
-    fprintf(stderr, "[HOST_EXIT]\n");
+    //fprintf(stderr, "[HOST_EXIT]\n");
 
     running = 0;
 }
@@ -440,14 +479,13 @@ static void run_emulator(void)
 						break;
 				}
 				if IS_IDLE() {
-					fprintf(stderr,"running: %d\n",inited);
 
 					if (inited==2) {
 						host_exit();
 					}
 
 					if (compile_frames>0) {
-						fprintf(stderr,"compile frames: %d\n",compile_frames);
+					//	fprintf(stderr,"compile frames: %d\n",compile_frames);
 						compile_frames=0;
 
 
@@ -599,6 +637,18 @@ int main(int argc, char **argv)
 	// END PRE-INIT
 	
 	run_emulator();
+
+	char oute[256];
+	char outc[256];
+
+	action_string_to_c(0x900,oute,sizeof(oute));
+
+	if (strlen(oute)!=0)
+		fprintf(stderr,"%s\n",oute);
+	action_string_to_c(0x550,outc,sizeof(outc));
+
+	if (strlen(outc)!=0)
+		fprintf(stderr,"Compile Error: %s, %s\n",outc,get_error(outc));
 
 	fclose(fin);
 	fclose(fout);
