@@ -60,12 +60,6 @@
 #define RAM_SIZE        65536
 //#define ACTION_LOAD     0x2000
 
-#define H_PATCH_OPEN    0xd150
-#define H_PATCH_CLOSE	0xd153
-#define H_PATCH_READ	0xd156
-#define H_PATCH_WRITE   0xd159
-#define H_PATCH_STATUS	0xd15C
-
 extern uint8_t memory[65536];
 extern uint16_t PC;
 extern uint8_t A;
@@ -133,19 +127,8 @@ int bankA000_offset=0x1000;
 
 uint8_t read6502(uint16_t address) {
 	
-	if (force_write)
-		fprintf(stderr,"read addr: %04x > %02x\n", address, memory[address]);
-
-	if (address>=H_DEVICE_BEGIN && address<H_DEVICE_END)
-	{
-		return memory[address];
-	}
-	if (address>=0xc000 && address<0xd000)
-		return atarios_bin[address-0xc000];
-
-
-	if (address>=0xd800)
-		return atarios_bin[address-0xc000];
+	//if (force_write)
+	//	fprintf(stderr,"read addr: %04x > %02x\n", address, memory[address]);
 
 	// banking
 	if (address>=0xa000 && address<0xb000)
@@ -156,6 +139,19 @@ uint8_t read6502(uint16_t address) {
 	if (address>=0xb000 && address<0xc000)
 	{
 		return action_bin[address-0xb000];
+	}
+	if (address<0xa000) return memory[address];
+
+	if (address>=0xc000 && address<0xd000)
+		return atarios_bin[address-0xc000];
+
+
+	if (address>=0xd800)
+		return atarios_bin[address-0xc000];
+
+	if (address>=H_DEVICE_BEGIN && address<H_DEVICE_END)
+	{
+		return memory[address];
 	}
 	if (address==0xd013) return 1; // cart on
 	if (address==0xd01f) return 7; // no consol pressed
@@ -171,13 +167,13 @@ uint8_t read6502(uint16_t address) {
 
 void write6502(uint16_t address, uint8_t value) {
 	if (force_write) {memory[address]=value; 
-		fprintf(stderr,"Write addr: (%d) %04x < %02x\n",force_write, address, value);
+	//	fprintf(stderr,"Write addr: (%d) %04x < %02x\n",force_write, address, value);
 		}
+	if (address <0xA000) memory[address] = value;
 	if (address==0xd500) { bankA000_offset=0x1000; return; }
 	if (address==0xd503) { bankA000_offset=0x3000; return; }
 	if (address==0xd509) { bankA000_offset=0x2000; return; }
 	if (address>0xD000 && address<0xD800) { memory[address]=value ; return; }
-	if (address <0xA000) memory[address] = value;
 }
 
 void write6502word(uint16_t address, uint16_t value)
@@ -505,7 +501,7 @@ static int intercept_jsr(void)
             Devices_H_Open();
             return 1;
 
-        case H_PATCH_CLOSE:
+        case H_PATCH_CLOS:
             Devices_H_Close();
             return 1;
 
@@ -513,11 +509,11 @@ static int intercept_jsr(void)
             Devices_H_Read();
             return 1;
 
-        case H_PATCH_WRITE:
+        case H_PATCH_WRIT:
             Devices_H_Write();
             return 1;
 
-        case H_PATCH_STATUS:
+        case H_PATCH_STAT:
             Devices_H_Status();
             return 1;
     }
