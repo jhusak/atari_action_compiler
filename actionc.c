@@ -395,7 +395,7 @@ static void run_emulator(void)
 			/* dodaj 1/7800 sekundy = 128200 ns */
 
 			++cnt;
-			next_time.tv_nsec += 128200;
+			next_time.tv_nsec += 128200/100;
 
 			if (next_time.tv_nsec >= 1000000000UL)
 			{
