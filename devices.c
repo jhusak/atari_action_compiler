@@ -265,7 +265,7 @@ void Util_catpath(char *result, const char *path1, const char *path2)
                         ? "%s%s" : "%s" Util_DIR_SEP_STR "%s", path1, path2);
 }
 
-static UWORD Devices_GetHostPath(int set_textmode)
+static UWORD Devices_GetHostPath()
 {
 	UWORD bufadr;
 	bufadr = Devices_GetAtariPath(atari_filename);
@@ -280,7 +280,7 @@ void Devices_H_Open(void)
 	FILE *fp;
 	UBYTE aux1;
 
-	if (Devices_GetHostPath(TRUE) == 0)
+	if (Devices_GetHostPath() == 0)
 		return;
 
 	if (!Devices_GetIOCB())

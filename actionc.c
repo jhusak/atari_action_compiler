@@ -365,25 +365,9 @@ static void handle_sigint(int sig) {
 static void run_emulator(void)
 {
 	long cycles = 0;
-	struct timespec next_time;
-	struct timespec now;
-	int cnt=0;
-
 	int compile_frames=0;
 	/* pobierz aktualny czas */
 
-	clock_gettime(CLOCK_MONOTONIC, &next_time);
- 
-
-
-	/* dodaj 1/50 sekundy = 20 000 000 ns */
-	next_time.tv_nsec += 20000000;
-
-	if (next_time.tv_nsec >= 1000000000)
-	{
-		next_time.tv_sec++;
-		next_time.tv_nsec -= 1000000000;
-	}
 
 	//write6502(0x8, 0xff);
 	//write6502(0x9, 0);
@@ -409,8 +393,6 @@ static void run_emulator(void)
 		step6502();
 
 		cycles++;
-
-		if ((cycles % 100) != 0) continue;
 
 		if ((cycles % 100) == 0) { // _about_ one scanline in real time
 			write6502(0x3A, 1);
