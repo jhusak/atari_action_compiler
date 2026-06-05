@@ -14,6 +14,7 @@ void Devices_UpdatePatches(void);
 
 
 extern uint8_t force_write;
+extern uint8_t h_textmode;
 
 UWORD Devices_SkipDeviceName(void);
 

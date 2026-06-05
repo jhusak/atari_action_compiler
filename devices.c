@@ -74,7 +74,9 @@ char Devices_h_current_dir[FILENAME_MAX];
 static FILE *h_fp[8] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 /* H: text mode per IOCB */
-static int h_textmode[8]={0};
+uint8_t h_textmode=0xff;
+#define h_textmode(t) (h_textmode & (1<<t))
+
 
 /* H: last read character per IOCB */
 static int h_lastbyte[8];
@@ -318,7 +320,7 @@ void Devices_H_Open(void)
 			char mode[4];
 			char *p = mode + 1;
 			mode[0] = (aux1 & 1) ? 'a' : (aux1 < 12) ? 'w' : 'r';
-			if (!h_textmode[h_iocb])
+			if (!h_textmode(h_iocb))
 				*p++ = 'b';
 			if (aux1 >= 12)
 				*p++ = '+';
@@ -373,7 +375,7 @@ void Devices_H_Read(void)
 		}
 		ch = h_lastbyte[h_iocb];
 		if (ch != EOF) {
-			if (h_textmode[h_iocb]) {
+			if (h_textmode(h_iocb)) {
 				switch (ch) {
 				case 0x0d:
 					h_wascr[h_iocb] = TRUE;
@@ -433,7 +435,7 @@ void Devices_H_Write(void)
 			fseek(h_fp[h_iocb], 0, SEEK_CUR);
 		h_lastop[h_iocb] = 'w';
 		ch = CPU_regA;
-		if (ch == 0x9b && h_textmode[h_iocb])
+		if (ch == 0x9b && h_textmode(h_iocb))
 			ch = '\n';
 		fputc(ch, h_fp[h_iocb]);
 		CPU_regY = 1;

@@ -436,10 +436,10 @@ static void run_emulator(void)
 			++cnt;
 			next_time.tv_nsec += 128200/100;
 
-			if (next_time.tv_nsec >= 1000000000UL)
+			if (next_time.tv_nsec >= 1000000000L)
 			{
 				next_time.tv_sec++;
-				next_time.tv_nsec -= 1000000000UL;
+				next_time.tv_nsec -= 1000000000L;
 			}
 
 			write6502(0x3A, 1);
@@ -490,6 +490,7 @@ static void run_emulator(void)
 
 
 						if (!inited) {
+							// depends on textmode
 							write6502(0x590, 0x08); // len
 							write6502(0x591, 0x43);	// len ascii codes
 							write6502(0x592, 0x22);
@@ -502,6 +503,7 @@ static void run_emulator(void)
 							write6502(764,12);
 							inited=1;
 						} else if (inited==1) {
+							h_textmode=0; // write always binary
 							write6502(0x590, 0x09); // len
 							write6502(0x591, 0x57);	// len ascii codes
 							write6502(0x592, 0x22);
@@ -609,6 +611,9 @@ int main(int argc, char **argv)
 
 	for (i = 3; i < argc; i++) {
 
+		if (strcmp(argv[i], "-b") == 0) {
+			h_textmode=0x00;
+		}
 		if (strcmp(argv[i], "-m") == 0) {
 
 			uint16_t addr;
