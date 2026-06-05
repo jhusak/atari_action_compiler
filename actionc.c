@@ -243,20 +243,6 @@ static void save_memory_full()
     fclose(f);
 }
 
-static void save_memory()
-{
-    FILE *f;
-
-    f = fopen("mem.sav", "wb");
-
-    if (!f)
-        fatal("cannot open file mem.sav");
-
-    fwrite(&memory[0], 1, 0xa000, f);
-
-    fclose(f);
-}
-
 
 /* ========================================================= */
 
@@ -598,7 +584,6 @@ int main(int argc, char **argv)
 	fclose(fout);
 
 	if (write_mem) {
-		save_memory();
 		save_memory_full();
 	}
 
