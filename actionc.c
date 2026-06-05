@@ -159,6 +159,7 @@ char * get_error(char * err)
 			case 28:		return "Illegal RETURN.";
 			case 61:		return "Out of Symbol Table space.";
 			case 128:		return "BREAK key was used to stop program execution.";
+			case 144:		return "Cannot write file.";
 			case 170:		return "File does not exist.";
 			default:		return "Error code not recognised";
 		}
@@ -448,71 +449,18 @@ static void run_emulator(void)
 
 		if ((cycles % 100) != 0) continue;
 
-		if ((cycles % 100000000) == 0) {
-
-			fprintf(stderr,
-					"instrs=%ld PC=%04X\n",
-					cycles,
-					PC);
-		}
-
-		clock_gettime(CLOCK_MONOTONIC, &now);
-
-		if  (
-				now.tv_sec > next_time.tv_sec ||
-				(now.tv_sec == next_time.tv_sec &&
-				 now.tv_nsec > next_time.tv_nsec)
-		    )
-		{
-			/* dodaj 1/7800 sekundy = 128200 ns */
-
-			++cnt;
-			next_time.tv_nsec += 128200/100;
-
-			if (next_time.tv_nsec >= 1000000000L)
-			{
-				next_time.tv_sec++;
-				next_time.tv_nsec -= 1000000000L;
-			}
-
+		if ((cycles % 100) == 0) { // _about_ one scanline in real time
 			write6502(0x3A, 1);
 			write6502(0x39, 1);
-			//if (cnt>156*50*5)
-			//	write6502(66,0);
 
 
-			if (++memory[0xd40b]==156) {
+			if (++memory[0xd40b]==156) { // simulating vblank
 				memory[0xd40b]=0;
-				//if (memory[0xd40e]&0x40)
-				//if (cnt>156*50)
-				//	nmi6502();	
-				//wypisz_ekran();
-				memory[20]++;
+
+				memory[20]++;	// simulating fake nmi
 				if (!memory[20]) memory[19]++;
 				if (!memory[20] && !memory[19]) memory[18]++;
 
-#if 0
-
-				int c = getchar();
-
-				if(c != EOF)
-				{
-					fprintf(stderr,"ASCII: %d\n",c);
-					if(c == 10) c=0x9b;
-					for (uint8_t i =0; i<127; i++) {
-						if  (key_to_ascii[i]==c)
-						{
-							memory[764]=i;
-							break;
-						}
-					}
-
-
-
-					if(c == 27)
-						break;
-				}
-#endif
 				if IS_IDLE() {
 
 					if (inited==2) {
@@ -553,7 +501,7 @@ static void usage(const char *prog)
 {
 	fprintf(stderr,
 			"usage:\n"
-			"  %s input.act output.txt [-m addr val]\n",
+			"  %s input.act output.txt [-b] [-m addr val]\n",
 			prog);
 
 	exit(1);
@@ -568,17 +516,6 @@ int main(int argc, char **argv)
 	if (argc < 3)
 		usage(argv[0]);
 
-	/*
-	fin = fopen(argv[1], "r");
-
-	if (!fin)
-		fatal("cannot open input file");
-
-	fout = fopen(argv[2], "w");
-
-	if (!fout)
-		fatal("cannot open output file");
-	*/
 	filename_in=argv[1];
 	if (strlen(filename_in)>0x21)  // 0x21 is max filename length Action! can handle
 		fatal("input filename too long");
@@ -617,7 +554,7 @@ int main(int argc, char **argv)
 	Devices_Frame();
 
 	write6502(0x496, GO_TO_COMPILER);
-	write6502(0x4e0, 0x60);
+	write6502(0x4e0, 0x60); // no bell
 
 
 	//for (int i=H_DEVICE_BEGIN; i<H_DEVICE_END; i++)
