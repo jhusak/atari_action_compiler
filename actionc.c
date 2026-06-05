@@ -138,6 +138,7 @@ char * get_error(char * err)
 			case 61:		return "Out of Symbol Table space.";
 			case 128:		return "BREAK key was used to stop program execution.";
 			case 144:		return "Cannot write file.";
+			case 165:		return "Bad filename.";
 			case 170:		return "File does not exist.";
 			default:		return "Error code not recognised";
 		}
