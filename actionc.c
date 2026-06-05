@@ -159,7 +159,8 @@ char * get_error(char * err)
 			case 28:		return "Illegal RETURN.";
 			case 61:		return "Out of Symbol Table space.";
 			case 128:		return "BREAK key was used to stop program execution.";
-			default:		return "";
+			case 170:		return "File does not exist.";
+			default:		return "Error code not recognised";
 		}
 }
 
@@ -228,6 +229,10 @@ void write6502word(uint16_t address, uint16_t value)
 /* ========================================================= */
 static FILE *fin  = NULL;
 static FILE *fout = NULL;
+
+static char * filename_in;
+static char * filename_out;
+
 
 static int running = 1;
 
@@ -315,6 +320,34 @@ static void action_string_to_c(
     //memcpy(out, &memory[ptr + 1], len);
 
     out[len] = 0;
+}
+
+static void c_string_to_action(
+		char *in,
+		char *in2,
+		char *in3,
+		uint16_t ptr,
+		size_t outsz)
+{
+	uint8_t len;
+
+	len = strlen(in2);
+
+	if (len >= outsz)
+		len = (uint8_t)(outsz - 1);
+
+	// hacky constraints for wrapping strings
+	if (strlen(in)>2) in[2]='\0';
+	if (strlen(in3)>1) in3[1]='\0';
+
+	uint16_t ptr0=ptr;
+	ptr++;
+	for (uint8_t i=0; i<strlen(in); i++) write6502(ptr++,in[i]);
+	for (uint8_t i=0; i<len; i++) write6502(ptr++,in2[i]);
+	for (uint8_t i=0; i<strlen(in3); i++) write6502(ptr++,in3[i]);
+	// save len
+	write6502(ptr0,ptr-ptr0-1);
+	save_memory();
 }
 
 
@@ -458,6 +491,7 @@ static void run_emulator(void)
 				if (!memory[20]) memory[19]++;
 				if (!memory[20] && !memory[19]) memory[18]++;
 
+#if 0
 
 				int c = getchar();
 
@@ -478,6 +512,7 @@ static void run_emulator(void)
 					if(c == 27)
 						break;
 				}
+#endif
 				if IS_IDLE() {
 
 					if (inited==2) {
@@ -491,29 +526,12 @@ static void run_emulator(void)
 
 						if (!inited) {
 							// depends on textmode
-							write6502(0x590, 0x08); // len
-							write6502(0x591, 0x43);	// len ascii codes
-							write6502(0x592, 0x22);
-							write6502(0x593, 0x42);
-							write6502(0x594, 0x2E);
-							write6502(0x595, 0x41);
-							write6502(0x596, 0x43);
-							write6502(0x597, 0x54);
-							write6502(0x598, 0x22);
+							c_string_to_action("C\"",filename_in,"\"",0x590,0x21);
 							write6502(764,12);
 							inited=1;
 						} else if (inited==1) {
 							h_textmode=0; // write always binary
-							write6502(0x590, 0x09); // len
-							write6502(0x591, 0x57);	// len ascii codes
-							write6502(0x592, 0x22);
-							write6502(0x593, 0x42);
-							write6502(0x594, 0x42);
-							write6502(0x595, 0x42);
-							write6502(0x596, 0x42);
-							write6502(0x597, 0x42);
-							write6502(0x598, 0x42);
-							write6502(0x599, 0x22);
+							c_string_to_action("W\"",filename_out,"\"",0x590,0x21);
 							write6502(764,12);
 							inited=2;
 
@@ -550,6 +568,7 @@ int main(int argc, char **argv)
 	if (argc < 3)
 		usage(argv[0]);
 
+	/*
 	fin = fopen(argv[1], "r");
 
 	if (!fin)
@@ -559,11 +578,19 @@ int main(int argc, char **argv)
 
 	if (!fout)
 		fatal("cannot open output file");
+	*/
+	filename_in=argv[1];
+	if (strlen(filename_in)>0x21)  // 0x21 is max filename length Action! can handle
+		fatal("input filename too long");
 
+	filename_out=argv[2];
+	if (strlen(filename_out)>0x21) 
+		fatal("output filename too long");
 
         signal(SIGINT, handle_sigint);
 
 
+#if TERMINAL
 	struct termios t,told;
 
 	tcgetattr(0, &t);
@@ -576,8 +603,7 @@ int main(int argc, char **argv)
 	int oldf = fcntl(STDIN_FILENO, F_GETFL, 0);
 
 	fcntl(0, F_SETFL, oldf | O_NONBLOCK);
-
-
+#endif
 
 
 	memset(memory,0,sizeof(memory));
@@ -611,9 +637,10 @@ int main(int argc, char **argv)
 
 	for (i = 3; i < argc; i++) {
 
-		if (strcmp(argv[i], "-b") == 0) {
+		if (strcmp(argv[i], "-b") == 0) { // default text mode, here set binary for texts
 			h_textmode=0x00;
 		}
+
 		if (strcmp(argv[i], "-m") == 0) {
 
 			uint16_t addr;
@@ -653,7 +680,7 @@ int main(int argc, char **argv)
 	action_string_to_c(0x550,outc,sizeof(outc));
 
 	if (strlen(outc)!=0)
-		fprintf(stderr,"Compile Error: %s, %s\n",outc,get_error(outc));
+		fprintf(stderr,"Compile Error: %s - %s\n",outc,get_error(outc));
 
 	fclose(fin);
 	fclose(fout);
@@ -662,8 +689,10 @@ int main(int argc, char **argv)
 	save_memory_full();
 
 	// restore terminal
+#if TERMINAL
 	tcsetattr(0, TCSANOW, &told);
 	fcntl(0, F_SETFL, oldf);
+#endif
 
 	return 0;
 }
