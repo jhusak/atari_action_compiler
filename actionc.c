@@ -141,6 +141,7 @@ char * get_error(char * err)
 			case 170:		return "File does not exist.";
 			default:		return "Error code not recognised";
 		}
+	return "Error format error";
 }
 
 
@@ -246,11 +247,13 @@ static void save_memory_full()
 
 /* ========================================================= */
 
+#if 0
 static void set_reset_vector(uint16_t addr)
 {
     write6502(0xFFFC, addr & 0xFF);
     write6502(0xFFFD, addr >> 8);
 }
+#endif
 
 /* ========================================================= */
 
