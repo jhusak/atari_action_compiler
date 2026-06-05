@@ -26,3 +26,6 @@ There are some ideas. If you have ones, fill free to raise an issue :)
 
 A simplest Tiny MOS 6502 Emulator in C, so clean. I have looked into many emulators, but this is the simplest and worth seeing how to program cleanly in C.
 
+# About device.c
+
+This file is borrowed from atari800 project. It is cut and simplified to work with only one host drive.
