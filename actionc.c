@@ -23,33 +23,10 @@
  *       -m 0x4000 0x12 \
  *       -m 0x4001 0x34
  *
- * Założenia:
- * - fake6502 dostarcza:
- *      reset6502()
- *      step6502()
+ * TODO: cleanup file mess.
  *
- * - ACTION! binary:
- *      action.bin
- *
- * - ładowanie:
- *      0x2000
- *
- * - reset vector:
- *      $FFFC/$FFFD -> 0x2000
- *
- * - host API:
- *
- *      $FFF0 = open
- *      $FFF3 = close
- *      $FFF6 = readline
- *      $FFF9 = write
- *      $FFFC = exit
- *
- * - emulator musi eksportować:
- *
- *      extern uint8_t memory[65536];
- *      extern uint16_t PC;
- *
+ * Author: Jakub Husak, 06.2026
+ * The software is "as is". No responsibility taken, use it as you want, but mention the author.
  */
 
 
@@ -71,6 +48,7 @@ extern uint8_t SP;
 
 uint8_t memory[65536];
 uint8_t force_write=0;
+uint8_t write_mem=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
@@ -348,7 +326,6 @@ static void c_string_to_action(
 	for (uint8_t i=0; i<strlen(in3); i++) write6502(ptr++,in3[i]);
 	// save len
 	write6502(ptr0,ptr-ptr0-1);
-	save_memory();
 }
 
 
@@ -501,7 +478,11 @@ static void usage(const char *prog)
 {
 	fprintf(stderr,
 			"usage:\n"
-			"  %s input.act output.txt [-b] [-m addr val]\n",
+			"  %s input.act output.obj <options>\n"
+			"	options:\n"
+			"	-b	- binary input file\n"
+			"	-w	- write mem.sav (for inspection)\n"
+			"	-m addr val - poke addr,val (like SET addr=val in Action!), may be used multiple times\n",
 			prog);
 
 	exit(1);
@@ -556,17 +537,7 @@ int main(int argc, char **argv)
 	write6502(0x496, GO_TO_COMPILER);
 	write6502(0x4e0, 0x60); // no bell
 
-
-	//for (int i=H_DEVICE_BEGIN; i<H_DEVICE_END; i++)
-	//	fprintf(stderr," %02x",read6502(i));
-
-	//fprintf(stderr,"\n");
-	//save_memory_full();
-	//tcsetattr(0, TCSANOW, &told);
-	//fcntl(0, F_SETFL, oldf);
 	force_write=0;
-	//exit(0);
-
 
 	/*
 	 * optional memory pokes
@@ -576,6 +547,10 @@ int main(int argc, char **argv)
 
 		if (strcmp(argv[i], "-b") == 0) { // default text mode, here set binary for texts
 			h_textmode=0x00;
+		}
+
+		if (strcmp(argv[i], "-w") == 0) { // default text mode, here set binary for texts
+			write_mem=1;
 		}
 
 		if (strcmp(argv[i], "-m") == 0) {
@@ -622,8 +597,10 @@ int main(int argc, char **argv)
 	fclose(fin);
 	fclose(fout);
 
-	save_memory();
-	save_memory_full();
+	if (write_mem) {
+		save_memory();
+		save_memory_full();
+	}
 
 	// restore terminal
 #if TERMINAL

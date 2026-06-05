@@ -6,11 +6,13 @@ It emulates original sandboxed Action! cartridge in bare atari 8-bit environment
 
 The cartridge is not modified in any way - some hooks are added (for example recognising idle loop, inserting filenames into filename buffers and poke(764,12) :)) After compile, the error code is gathered and last compiled line printed, as in original cartridge.
 
-It works in a way that a flag setting to Monitor mode is set, then C"filename" command is invoked, waitingo for IDLE loop, then W"filename" is invoked, printed error texts if needed and program ends (for now it writes mem.sav with whole memory contents)
+It works in a way that a flag setting to Monitor mode is set, then C"filename" command is invoked, waiting for IDLE loop, then W"filename" is invoked, printed error texts if any and program ends.
 
 The comatibility is not full 100% - as user may use SET instruction, which writes to memory, and there some uses for it. It may not work if used on hardware registers (which are not implemented) or others strange uses. But when you use them as they were made to, you should not encounter any problems.
 
-There is no overhead by system (whole available memory may be used), from the beginning to 0x93ff.
+There is no overhead by disk operating system (whole available memory may be used), from the (reasonable) beginning to 0x93ff.
+
+The Action! cartridge has it's full potential. It should work exactly as original, including all included libraries (beware of case sensitive).
 
 # Alpha state
 
@@ -18,7 +20,7 @@ Compiler is in it's alpha state - it means it may have bugs. However, usual usec
 
 # Future releases
 
-There are some ideas, if you have ones, fill free, to raise an issue :)
+There are some ideas. If you have ones, fill free to raise an issue :)
 
 # About fake6502 (base)
 
