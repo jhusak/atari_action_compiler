@@ -49,14 +49,20 @@ extern uint8_t SP;
 uint8_t memory[65536];
 uint8_t force_write=0;
 uint8_t write_mem=0;
+uint8_t show_action_calls=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
 typedef uint8_t UBYTE;
 #include "inc/altirraos_xl.c"
 //#include "inc/atariosxl.c"
-
 #define IS_IDLE() (PC>=0xa2e6 && PC<=0xa2ef)
+
+char * functab[65536]={0};
+
+void init_functab() {
+#include "inc/functab.c"
+}
 
 uint8_t ascii_to_screen(uint8_t c)
 {
@@ -370,6 +376,8 @@ static void run_emulator(void)
 {
 	long cycles = 0;
 	int compile_frames=0;
+	init_functab();
+
 	/* pobierz aktualny czas */
 
 
@@ -394,6 +402,25 @@ static void run_emulator(void)
 		}
 
 		//fprintf(stderr,"%04x\n",PC);
+		//
+		// CHECK FOR ACTION CALL
+		if (show_action_calls) {
+			if (PC==0xBFB7)
+			{
+				if (A==0x20)
+				{
+					if (Y>=0xa0 && Y<0xbf)
+					{
+						int a=read6502word(0xe);
+						int call=(Y<<8)+X;
+						printf("LIBCALL: %04x: JSR %04x",a,call);
+						if (functab[call]!=NULL) printf("   %s",functab[call]);
+						printf("\n");
+					}
+
+				}
+			}
+		}
 		step6502();
 
 		cycles++;
@@ -517,8 +544,12 @@ int main(int argc, char **argv)
 
 	for (i = 3; i < argc; i++) {
 
-		if (strcmp(argv[i], "-b") == 0) { // default text mode, here set binary for texts
+		if (strcmp(argv[i], "-b") == 0) { // default text mode on, here set binary for texts
 			h_textmode=0x00;
+		}
+
+		if (strcmp(argv[i], "-c") == 0) { // default no, here set showcalls during compile
+			show_action_calls=1;
 		}
 
 		if (strcmp(argv[i], "-w") == 0) { // default text mode, here set binary for texts
