@@ -44,8 +44,7 @@ usage:
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 
-        This is untested feature.
-
+        This simulates SET command. The values are set BEFORE any other activity.
 
 
 # Alpha state
