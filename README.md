@@ -24,16 +24,23 @@ usage:
 
     -a	- set atari file format (0x9b = enter), default unix file format
 
-        Normally Action! gets file in atari format (enter=0x9b). But in unix/PC world enter=0x10. The input in unix format is translated to Atari format on the fly. However, it may be surprising, that you can also compile Atari format not using -b switch. But sometimes you have control codes in your sources. Then ctrl-J may be treated as newline, and generate an error.
+        Normally Action! gets file in atari format (enter=0x9b). But in unix/PC world enter=0x10.
+        The input in unix format is translated to Atari format on the fly. However, it may be
+        surprising, that you can also compile Atari format not using -b switch. But sometimes
+        you have control codes in your sources. Then ctrl-J may be treated as newline, and generate an error.
 
     -c	- print action library calls during compilation
     -C	- print action library calls during compilation along with code
         
-        This is the most missing feature for me, because often I use Action! as pure standalone assembly generator (not using the Action! library under A000+). Uppercase opton gives more or less accurate line of code conaining the call to Action! library.
+        This is the most missing feature for me, because often I use Action! as pure standalone
+        assembly generator (not using the Action! library under A000+). Uppercase opton gives
+        more or less accurate line of code conaining the call to Action! library.
 
     -w	- write mem.sav (for inspection)
 
-        This writes whole 0-65535 memory image. The addressees between D000-D800 are not valid (have no true values) in general. Only vcount is emulated, which is needed for Action to generate bells and keyboard clicks (silent, of course, otherwise Action! locks on clicks :)
+        This writes whole 0-65535 memory image. The addressees between D000-D800 are not valid
+        (have no true values) in general. Only vcount is emulated, which is needed for Action!
+        to generate bells and keyboard clicks (silent, of course, otherwise Action! locks on clicks :)
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 
