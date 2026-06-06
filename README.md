@@ -33,8 +33,8 @@ usage:
     -C	- print action library calls during compilation along with code
         
         This is the most missing feature for me, because often I use Action! as pure standalone
-        assembly generator (not using the Action! library under A000+). Uppercase option gives
-        more or less accurate line of code containing the call to Action! library.
+        assembly generator (not using the Action! library under A000+). Uppercase option reports
+        the right line if call is not last in line and the next line, if call ends the line.
 
     -w	- write mem.sav (for inspection)
 

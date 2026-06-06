@@ -27,6 +27,8 @@ extern char Devices_h_device_name;
 
 extern char Devices_h_current_dir[FILENAME_MAX];
 
+int Devices_H_GetLastReadLineNumber(void);
+
 int Devices_H_CountOpen(void);
 void Devices_H_CloseAll(void);
 void Devices_H_Status(void);

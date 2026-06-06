@@ -9,9 +9,10 @@
 #include <ctype.h>
 
 /*
- * actionwrap.c
+ * actionc.c
  *
- * Wrapper dla fake6502 + ACTION!
+ * Wrapper for fake6502 + ACTION!
+ * Author: Jakub Husak, 06.2026
  *
  * build:
  *   cc actionwrap.c fake6502.c -o action6502
@@ -25,7 +26,6 @@
  *
  * TODO: cleanup file mess.
  *
- * Author: Jakub Husak, 06.2026
  * The software is "as is". No responsibility taken, use it as you want, but mention the author.
  */
 
@@ -88,22 +88,6 @@ uint8_t screen_to_ascii(uint8_t c)
 		return c - 64;
 
 	return c;
-}
-
-void wypisz_ekran()
-{
-        // Sterowanie ekranem kodami ANSI
-        printf("\x1B[2J"); // clear screen
-        printf("\x1B[H");  // home cursor
-
-	for (int y = 0; y < 24; y++)
-	{
-		for (int x = 0; x < 40; x++)
-		{
-			putchar(screen_to_ascii(read6502(0x9c40+x+y*40)&0x7f));
-		}
-		putchar('\n');
-	}
 }
 
 
@@ -411,6 +395,7 @@ static void run_emulator(void)
 				{
 					if (Y>=0xa0 && Y<0xbf)
 					{
+						int ln=Devices_H_GetLastReadLineNumber();
 						int a=read6502word(0xe);
 						int call=(Y<<8)+X;
 						printf("LIBCALL: %04x: JSR %04x",a,call);
@@ -421,7 +406,7 @@ static void run_emulator(void)
 							action_string_to_c(0x900,oute,sizeof(oute));
 
 							if (strlen(oute)!=0)
-								fprintf(stderr,"%s\n",oute);
+								printf("Line %d: %s\n",ln, oute);
 						}
 					}
 

@@ -83,6 +83,8 @@ static int h_lastbyte[8];
 
 /* last read character was CR, per IOCB */
 static int h_wascr[8];
+static int h_linenum[8]={0};
+static int h_lastreadiocb=0;
 
 /* last operation: 'o': open, 'r': read, 'w': write, 'p': point, 'b': binary
    load, per IOCB. This is needed to apply fseek(fp, 0, SEEK_CUR) between reads
@@ -107,6 +109,11 @@ static char atari_path[FILENAME_MAX];
 /* full filename for the current operation */
 static char host_path[FILENAME_MAX];
 
+int Devices_H_GetLastReadLineNumber()
+{
+	if (h_lastreadiocb==0) return 0;
+	return h_linenum[h_lastreadiocb];
+}
 int Devices_H_CountOpen(void)
 {
 	int r = 0;
@@ -290,6 +297,8 @@ void Devices_H_Open(void)
 
 	fp = NULL;
 	h_wascr[h_iocb] = FALSE;
+	h_linenum[h_iocb] = 0;
+	h_lastreadiocb=h_iocb;
 	h_lastop[h_iocb] = 'o';
 
 	aux1 = MEMORY_dGetByte(Devices_ICAX1Z);
@@ -400,13 +409,16 @@ void Devices_H_Read(void)
 						}
 					}
 					else
+					{
 						ch = 0x9b;
+					}
 					break;
 				default:
 					h_wascr[h_iocb] = FALSE;
 					break;
 				}
 			}
+			if (ch==0x9b) h_linenum[h_lastreadiocb=h_iocb]++;
 			CPU_regA = (UBYTE) ch;
 			/* [OSMAN] p. 79: Status should be 3 if next read would yield EOF.
 			   But to set the stream's EOF flag, we need to read the next byte. */
