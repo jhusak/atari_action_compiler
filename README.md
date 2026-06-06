@@ -18,7 +18,8 @@ The Action! cartridge has it's full potential. It should work exactly as origina
 
 usage:
 
-  %s input.act output.obj <options>
+  %s input.act output.obj \<options\>
+  
     options:
 
     -a	- set atari file format (0x9b = enter), default unix file format
