@@ -416,6 +416,13 @@ static void run_emulator(void)
 						printf("LIBCALL: %04x: JSR %04x",a,call);
 						if (functab[call]!=NULL) printf("   %s",functab[call]);
 						printf("\n");
+						if (show_action_calls==2) {
+							char oute[256];
+							action_string_to_c(0x900,oute,sizeof(oute));
+
+							if (strlen(oute)!=0)
+								fprintf(stderr,"%s\n",oute);
+						}
 					}
 
 				}
@@ -479,9 +486,11 @@ static void usage(const char *prog)
 			"usage:\n"
 			"  %s input.act output.obj <options>\n"
 			"	options:\n"
-			"	-b	- binary input file\n"
+			"	-a	- set atari file format (0x9b = enter), default unix file format\n"
+			"	-c	- print action library calls during compilation\n"
+			"	-C	- print action library calls during compilation along with code\n"
 			"	-w	- write mem.sav (for inspection)\n"
-			"	-m addr val - poke addr,val (like SET addr=val in Action!), may be used multiple times\n",
+			"	-m addr val - like SET addr=val in Action!; may be used multiple times\n",
 			prog);
 
 	exit(1);
@@ -544,12 +553,16 @@ int main(int argc, char **argv)
 
 	for (i = 3; i < argc; i++) {
 
-		if (strcmp(argv[i], "-b") == 0) { // default text mode on, here set binary for texts
+		if (strcmp(argv[i], "-a") == 0) { // default text mode on, here set binary for texts
 			h_textmode=0x00;
 		}
 
 		if (strcmp(argv[i], "-c") == 0) { // default no, here set showcalls during compile
 			show_action_calls=1;
+		}
+
+		if (strcmp(argv[i], "-C") == 0) { // default no, here set showcalls during compile
+			show_action_calls=2;
 		}
 
 		if (strcmp(argv[i], "-w") == 0) { // default text mode, here set binary for texts
@@ -594,8 +607,12 @@ int main(int argc, char **argv)
 		fprintf(stderr,"%s\n",oute);
 	action_string_to_c(0x550,outc,sizeof(outc));
 
+	int error=0;
 	if (strlen(outc)!=0)
+	{
 		fprintf(stderr,"Compile Error: %s - %s\n",outc,get_error(outc));
+		error = 1;
+	}
 
 	fclose(fin);
 	fclose(fout);
@@ -610,5 +627,5 @@ int main(int argc, char **argv)
 	fcntl(0, F_SETFL, oldf);
 #endif
 
-	return 0;
+	return error;
 }
