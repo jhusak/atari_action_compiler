@@ -18,7 +18,7 @@ The Action! cartridge has it's full potential. It should work exactly as origina
 
 usage:
 
-  %s input.act output.obj \<options\>
+  ./actionc input.act output.obj \<options\>
   
     options:
 
