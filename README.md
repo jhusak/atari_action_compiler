@@ -39,8 +39,8 @@ usage:
     -w	- write mem.sav (for inspection)
 
         This writes whole 0-65535 memory image. The addressees between D000-D800 are not valid
-        (have no true values) in general. Only vcount is emulated, which is needed for Action!
-        to generate bells and keyboard clicks (silent, of course, otherwise Action! locks on clicks :)
+        (have no true values) in general. Only vcount and consol (set to 7) is emulated, which is needed for Action!
+        to generate bells and keyboard clicks (silent, of course). Without emulated vcount Action! loops on generating clicks :)
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 
