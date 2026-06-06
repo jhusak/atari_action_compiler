@@ -8,7 +8,7 @@ The cartridge is not modified in any way - some hooks are added (for example rec
 
 It works in a way that a flag setting to Monitor mode is set, then C"filename" command is invoked, waiting for IDLE loop, then W"filename" is invoked, printed error texts if any and program ends.
 
-The comatibility is not full 100% - as user may use SET instruction, which writes to memory, and there some uses for it. It may not work if used on hardware registers (which are not implemented) or others strange uses. But when you use them as they were made to, you should not encounter any problems.
+The compatibility is not full 100% - as user may use SET instruction, which writes to memory, and there some uses for it. It may not work if used on hardware registers (which are not implemented) or others strange uses. But when you use them as they were made to, you should not encounter any problems.
 
 There is no overhead by disk operating system (whole available memory may be used), from the (reasonable) beginning to 0x93ff.
 
@@ -33,8 +33,8 @@ usage:
     -C	- print action library calls during compilation along with code
         
         This is the most missing feature for me, because often I use Action! as pure standalone
-        assembly generator (not using the Action! library under A000+). Uppercase opton gives
-        more or less accurate line of code conaining the call to Action! library.
+        assembly generator (not using the Action! library under A000+). Uppercase option gives
+        more or less accurate line of code containing the call to Action! library.
 
     -w	- write mem.sav (for inspection)
 
@@ -50,7 +50,7 @@ usage:
 
 # Alpha state
 
-Compiler is in it's alpha state - it means it may have bugs. However, usual usecases work perfectly.
+Compiler is in its alpha state - it means it may have bugs. However, usual use-cases work perfectly.
 
 # Future releases
 
