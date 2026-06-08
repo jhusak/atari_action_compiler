@@ -1,4 +1,4 @@
-# Atari Action! Compiler
+## Atari Action! Compiler
 
 Atari Action! Compiler in a sandbox made of fake6502 (MOS 6502 Emulator in C) written in C.
 
@@ -41,6 +41,8 @@ usage:
         This writes whole 0-65535 memory image. The addressees between D000-D800 are not valid
         (have no true values) in general. Only vcount and consol (set to 7) is emulated, which is needed for Action!
         to generate bells and keyboard clicks (silent, of course). Without emulated vcount Action! loops on generating clicks :)
+
+    -t  - shows compile time.
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 
