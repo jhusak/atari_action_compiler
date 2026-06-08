@@ -50,6 +50,7 @@ uint8_t memory[65536];
 uint8_t force_write=0;
 uint8_t write_mem=0;
 uint8_t show_action_calls=0;
+uint8_t show_compilation_time=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
@@ -362,7 +363,14 @@ static void run_emulator(void)
 	int compile_frames=0;
 	init_functab();
 
+	struct timespec now, next_time;
+
 	/* pobierz aktualny czas */
+	clock_gettime(CLOCK_MONOTONIC, &now);
+
+	/* dodaj 1/50 sekundy = 20 000 000 ns */
+	next_time.tv_nsec += 20000000;
+
 
 
 	//write6502(0x8, 0xff);
@@ -461,6 +469,22 @@ static void run_emulator(void)
 		}
 
 	}
+	if (show_compilation_time) {
+		clock_gettime(CLOCK_MONOTONIC, &next_time);
+		next_time.tv_sec-=now.tv_sec;
+
+		if (next_time.tv_nsec < now.tv_nsec)
+		{
+			next_time.tv_sec--;
+			next_time.tv_nsec +=1000000000;
+		}
+
+		next_time.tv_nsec -=now.tv_nsec;
+
+		printf("Compiled in %ld.%06ld sec\n",next_time.tv_sec,next_time.tv_nsec/1000);
+	}
+
+
 }
 
 /* ========================================================= */
@@ -475,6 +499,7 @@ static void usage(const char *prog)
 			"	-c	- print action library calls during compilation\n"
 			"	-C	- print action library calls during compilation along with code\n"
 			"	-w	- write mem.sav (for inspection)\n"
+			"	-t	- show compilation time\n"
 			"	-m addr val - like SET addr=val in Action!; may be used multiple times\n",
 			prog);
 
@@ -552,6 +577,10 @@ int main(int argc, char **argv)
 
 		if (strcmp(argv[i], "-w") == 0) { // default text mode, here set binary for texts
 			write_mem=1;
+		}
+
+		if (strcmp(argv[i], "-t") == 0) { // default no, here set showcalls during compile
+			show_compilation_time=1;
 		}
 
 		if (strcmp(argv[i], "-m") == 0) {
