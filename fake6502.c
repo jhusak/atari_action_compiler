@@ -351,45 +351,96 @@ static void LXA() { A = X = ( A | 0xee) & getvalue(); calcZN(A); }
 
 // ----------------------------------------------------------------------------
 
-static void (*addrtable[256])() = {
-// 0    1   2    3   4   5   6   7   8    9   A    B    C    D    E    F
-  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, // 0
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, // 1
- abso,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, // 2
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, // 3
-  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, // 4
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, // 5
-  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm, ind,abso,abso,abso, // 6
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, // 7
-  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, // 8
-  rel,indy,imp,indy,zpx,zpx,zpy,zpy,imp,absy,imp,absy,absx,absx,absy,absy, // 9
-  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, // A
-  rel,indy,imp,indy,zpx,zpx,zpy,zpy,imp,absy,imp,absy,absx,absx,absy,absy, // B
-  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, // C
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, // D
-  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, // E
-  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx  // F
-};
+#define MAKE_ADDR_TABLE(t,op) 	\
+static void (*t[256])(op) = {\
+/* 0    1   2    3   4   5   6   7   8    9   A    B    C    D    E    F */\
+  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, /* 0*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* 1*/\
+ abso,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, /* 2*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* 3*/\
+  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, /* 4*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* 5*/\
+  imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm, ind,abso,abso,abso, /* 6*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* 7*/\
+  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, /* 8*/\
+  rel,indy,imp,indy,zpx,zpx,zpy,zpy,imp,absy,imp,absy,absx,absx,absy,absy, /* 9*/\
+  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, /* A*/\
+  rel,indy,imp,indy,zpx,zpx,zpy,zpy,imp,absy,imp,absy,absx,absx,absy,absy, /* B*/\
+  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, /* C*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* D*/\
+  imm,indx,imm,indx, zp, zp, zp, zp,imp, imm,imp, imm,abso,abso,abso,abso, /* E*/\
+  rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx  /* F*/\
+}
 
-static void (*optable[256])() = {
-//   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F
-    brk,ora,JAM,SLO,nop,ora,asl,SLO,php,ora,asl,ANC,nop,ora,asl,SLO, // 0
-    bpl,ora,JAM,SLO,nop,ora,asl,SLO,clc,ora,nop,SLO,nop,ora,asl,SLO, // 1
-    jsr,and,JAM,RLA,bit,and,rol,RLA,plp,and,rol,ANC,bit,and,rol,RLA, // 2
-    bmi,and,JAM,RLA,nop,and,rol,RLA,sec,and,nop,RLA,nop,and,rol,RLA, // 3
-    rti,eor,JAM,SRE,nop,eor,lsr,SRE,pha,eor,lsr,ALR,jmp,eor,lsr,SRE, // 4
-    bvc,eor,JAM,SRE,nop,eor,lsr,SRE,cli,eor,nop,SRE,nop,eor,lsr,SRE, // 5
-    rts,adc,JAM,RRA,nop,adc,ror,RRA,pla,adc,ror,ARR,jmp,adc,ror,RRA, // 6
-    bvs,adc,JAM,RRA,nop,adc,ror,RRA,sei,adc,nop,RRA,nop,adc,ror,RRA, // 7
-    nop,sta,nop,SAX,sty,sta,stx,SAX,dey,nop,txa,ANE,sty,sta,stx,SAX, // 8
-    bcc,sta,JAM,SHA,sty,sta,stx,SAX,tya,sta,txs,TAS,SHY,sta,SHX,SHA, // 9
-    ldy,lda,ldx,LAX,ldy,lda,ldx,LAX,tay,lda,tax,LXA,ldy,lda,ldx,LAX, // A
-    bcs,lda,JAM,LAX,ldy,lda,ldx,LAX,clv,lda,tsx,LAS,ldy,lda,ldx,LAX, // B
-    cpy,cmp,nop,DCP,cpy,cmp,dec,DCP,iny,cmp,dex,SBX,cpy,cmp,dec,DCP, // C
-    bne,cmp,JAM,DCP,nop,cmp,dec,DCP,cld,cmp,nop,DCP,nop,cmp,dec,DCP, // D
-    cpx,sbc,nop,ISC,cpx,sbc,inc,ISC,inx,sbc,nop,sbc,cpx,sbc,inc,ISC, // E
-    beq,sbc,JAM,ISC,nop,sbc,inc,ISC,sed,sbc,nop,ISC,nop,sbc,inc,ISC  // F
+MAKE_ADDR_TABLE(addrtable,void);
+
+static void imp_diss(uint16_t PC) { };
+static void acc_diss(uint16_t PC) { };
+static void imm_diss(uint16_t PC) {  printf("#$%02x",read6502(PC));};
+static void zp_diss(uint16_t PC) {  printf("%02x",read6502(PC));};
+static void zpx_diss(uint16_t PC) { printf("(%02x,x)", (read6502(PC)));};
+static void zpy_diss(uint16_t PC) { printf("(%02x),y", (read6502(PC)));};
+static void abso_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
+static void absx_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
+static void absy_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
+static void rel_diss(uint16_t PC) { printf("%d",PC+1+(int8_t )read6502(PC));};
+static void ind_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
+static void indx_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
+static void indy_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
+
+
+#define imp  imp_diss
+#define acc  acc_diss
+#define imm  imm_diss
+#define zp   zp_diss
+#define zpx  zpx_diss
+#define zpy  zpy_diss
+#define abso abso_diss
+#define absx absx_diss
+#define absy absy_diss
+#define rel  rel_diss
+#define ind  ind_diss
+#define indx indx_diss
+#define indy indy_diss
+
+MAKE_ADDR_TABLE(disasstable,uint16_t a);
+
+#define MAKE_OPER_TABLE(table) 	\
+static table  = {\
+/*   0   1   2   3   4   5   6   7   8   9   A   B   C   D   E   F */\
+    M(brk),M(ora),M(JAM),M(SLO),M(nop),M(ora),M(asl),M(SLO),M(php),M(ora),M(asl),M(ANC),M(nop),M(ora),M(asl),M(SLO), /* 0*/\
+    M(bpl),M(ora),M(JAM),M(SLO),M(nop),M(ora),M(asl),M(SLO),M(clc),M(ora),M(nop),M(SLO),M(nop),M(ora),M(asl),M(SLO), /* 1*/\
+    M(jsr),M(and),M(JAM),M(RLA),M(bit),M(and),M(rol),M(RLA),M(plp),M(and),M(rol),M(ANC),M(bit),M(and),M(rol),M(RLA), /* 2*/\
+    M(bmi),M(and),M(JAM),M(RLA),M(nop),M(and),M(rol),M(RLA),M(sec),M(and),M(nop),M(RLA),M(nop),M(and),M(rol),M(RLA), /* 3*/\
+    M(rti),M(eor),M(JAM),M(SRE),M(nop),M(eor),M(lsr),M(SRE),M(pha),M(eor),M(lsr),M(ALR),M(jmp),M(eor),M(lsr),M(SRE), /* 4*/\
+    M(bvc),M(eor),M(JAM),M(SRE),M(nop),M(eor),M(lsr),M(SRE),M(cli),M(eor),M(nop),M(SRE),M(nop),M(eor),M(lsr),M(SRE), /* 5*/\
+    M(rts),M(adc),M(JAM),M(RRA),M(nop),M(adc),M(ror),M(RRA),M(pla),M(adc),M(ror),M(ARR),M(jmp),M(adc),M(ror),M(RRA), /* 6*/\
+    M(bvs),M(adc),M(JAM),M(RRA),M(nop),M(adc),M(ror),M(RRA),M(sei),M(adc),M(nop),M(RRA),M(nop),M(adc),M(ror),M(RRA), /* 7*/\
+    M(nop),M(sta),M(nop),M(SAX),M(sty),M(sta),M(stx),M(SAX),M(dey),M(nop),M(txa),M(ANE),M(sty),M(sta),M(stx),M(SAX), /* 8*/\
+    M(bcc),M(sta),M(JAM),M(SHA),M(sty),M(sta),M(stx),M(SAX),M(tya),M(sta),M(txs),M(TAS),M(SHY),M(sta),M(SHX),M(SHA), /* 9*/\
+    M(ldy),M(lda),M(ldx),M(LAX),M(ldy),M(lda),M(ldx),M(LAX),M(tay),M(lda),M(tax),M(LXA),M(ldy),M(lda),M(ldx),M(LAX), /* A*/\
+    M(bcs),M(lda),M(JAM),M(LAX),M(ldy),M(lda),M(ldx),M(LAX),M(clv),M(lda),M(tsx),M(LAS),M(ldy),M(lda),M(ldx),M(LAX), /* B*/\
+    M(cpy),M(cmp),M(nop),M(DCP),M(cpy),M(cmp),M(dec),M(DCP),M(iny),M(cmp),M(dex),M(SBX),M(cpy),M(cmp),M(dec),M(DCP), /* C*/\
+    M(bne),M(cmp),M(JAM),M(DCP),M(nop),M(cmp),M(dec),M(DCP),M(cld),M(cmp),M(nop),M(DCP),M(nop),M(cmp),M(dec),M(DCP), /* D*/\
+    M(cpx),M(sbc),M(nop),M(ISC),M(cpx),M(sbc),M(inc),M(ISC),M(inx),M(sbc),M(nop),M(sbc),M(cpx),M(sbc),M(inc),M(ISC), /* E*/\
+    M(beq),M(sbc),M(JAM),M(ISC),M(nop),M(sbc),M(inc),M(ISC),M(sed),M(sbc),M(nop),M(ISC),M(nop),M(sbc),M(inc),M(ISC)  /* F*/\
 };
+#define M(a)	a
+
+MAKE_OPER_TABLE(void (*optable[256])());
+
+#undef M
+#define M(a)	#a
+
+MAKE_OPER_TABLE(char * dissnametable[256]);
+
+
+void diss(uint8_t a, uint8_t x, uint8_t y)
+{
+	printf("%04x	",read6502word(0xae));
+	printf("%s ",dissnametable[a]);
+	(*disasstable[opcode])(x+(y<<8));
+}
 
 int nmi6502() {
     push16(PC);

@@ -17,6 +17,7 @@ extern uint16_t  pull16(void);
 extern uint16_t read6502word(uint16_t addr);
 extern void write6502(uint16_t address,uint8_t val);
 extern void write6502word(uint16_t addr, uint16_t val);
+void diss(uint8_t a, uint8_t x, uint8_t y);
 
 int nmi6502(void);
 int reset6502(void);

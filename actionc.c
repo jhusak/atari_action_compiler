@@ -419,6 +419,8 @@ static void run_emulator(void)
 					}
 
 				}
+				diss(A,X,Y);
+				printf("\n");
 			}
 		}
 		step6502();
