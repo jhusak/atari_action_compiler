@@ -42,7 +42,7 @@ usage:
         (have no true values) in general. Only vcount and consol (set to 7) is emulated, which is needed for Action!
         to generate bells and keyboard clicks (silent, of course). Without emulated vcount Action! loops on generating clicks :)
 
-    -t  - shows compile time.
+    -t  - show compilation time.
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 
