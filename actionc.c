@@ -568,27 +568,27 @@ int main(int argc, char **argv)
 
 		if (strcmp(argv[i], "-a") == 0) { // default unix format, sets atari format
 			h_textmode=0x00;
-		}
+		} else
 
 		if (strcmp(argv[i], "-c") == 0) { // sets showcalls during compile
 			show_action_calls=1;
-		}
+		} else
 
 		if (strcmp(argv[i], "-C") == 0) { // sets showcalls along lines nearby.
 			show_action_calls=2;
-		}
+		} else
 
 		if (strcmp(argv[i], "-w") == 0) { // save mem image
 			write_mem=1;
-		}
+		} else
 
 		if (strcmp(argv[i], "-t") == 0) {
 			show_compilation_time=1;
-		}
+		} else
 
 		if (strcmp(argv[i], "-l") == 0) {
 			do_save_library=1;
-		}
+		} else
 
 
 		if (strcmp(argv[i], "-m") == 0) {
@@ -610,6 +610,12 @@ int main(int argc, char **argv)
 					val);
 
 			i += 2;
+		} else
+		{
+
+			fprintf(stderr, "Unknown argument: '%s'\n", argv[i]);
+			exit(1);
+
 		}
 	}
 
