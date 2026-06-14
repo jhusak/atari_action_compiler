@@ -563,36 +563,19 @@ int main(int argc, char **argv)
 	/*
 	 * optional memory pokes
 	 */
+#define IF(a)	if (strcmp(argv[i], a) == 0) {
+#define	ELSE	} else
+#define EIF(a)	ELSE IF(a)
 
 	for (i = 3; i < argc; i++) {
 
-		if (strcmp(argv[i], "-a") == 0) { // default unix format, sets atari format
-			h_textmode=0x00;
-		} else
-
-		if (strcmp(argv[i], "-c") == 0) { // sets showcalls during compile
-			show_action_calls=1;
-		} else
-
-		if (strcmp(argv[i], "-C") == 0) { // sets showcalls along lines nearby.
-			show_action_calls=2;
-		} else
-
-		if (strcmp(argv[i], "-w") == 0) { // save mem image
-			write_mem=1;
-		} else
-
-		if (strcmp(argv[i], "-t") == 0) {
-			show_compilation_time=1;
-		} else
-
-		if (strcmp(argv[i], "-l") == 0) {
-			do_save_library=1;
-		} else
-
-
-		if (strcmp(argv[i], "-m") == 0) {
-
+		IF("-a")  h_textmode=0x00; // default unix format, sets atari forma
+		EIF("-c") show_action_calls=1; // sets showcalls during compile
+		EIF("-C") show_action_calls=2; // sets showcalls along lines nearby.
+		EIF("-w") write_mem=1; // save mem image
+		EIF("-t") show_compilation_time=1;
+		EIF("-l") do_save_library=1;
+		EIF("-m") 
 			uint16_t addr;
 			uint8_t val;
 
@@ -610,12 +593,10 @@ int main(int argc, char **argv)
 					val);
 
 			i += 2;
-		} else
+		ELSE
 		{
-
 			fprintf(stderr, "Unknown argument: '%s'\n", argv[i]);
 			exit(1);
-
 		}
 	}
 
@@ -628,6 +609,7 @@ int main(int argc, char **argv)
 
 	char oute[256]={0};
 	char outc[256]={0};
+	int error=0;
 
 	if (was_error) {
 		action_string_to_c(0x900,oute,sizeof(oute));
@@ -635,10 +617,6 @@ int main(int argc, char **argv)
 		if (strlen(oute)!=0)
 			fprintf(stderr,"%s\n",oute);
 		action_string_to_c(0x550,outc,sizeof(outc));
-	}
-	int error=0;
-	if (strlen(outc)!=0)
-	{
 		fprintf(stderr,"Compile Error: %s - %s\n",outc,get_error(outc));
 		error = 1;
 	}
@@ -650,6 +628,7 @@ int main(int argc, char **argv)
 		save_memory_full();
 		save_crawl_mem();
 	}
+
 	if (do_save_library)
 	{
 		char * libname=NULL;
