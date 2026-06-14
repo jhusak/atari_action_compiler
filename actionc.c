@@ -100,7 +100,7 @@ uint8_t screen_to_ascii(uint8_t c)
 char * get_error(char * err)
 {
 	uint8_t errn=atoi(err);
-	if (strlen(err)>0)
+	if (strlen(err)>0) {
 		switch (errn) {
 			case 0: 		return "Out of system memory.";
 			case 1: 		return "Missing \" (double quote) \" in a string.";
@@ -138,7 +138,8 @@ char * get_error(char * err)
 			case 170:		return "File does not exist.";
 			default:		return "Error code not recognised";
 		}
-	return "Error format error";
+	}
+	return err;
 }
 
 
