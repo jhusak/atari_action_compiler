@@ -54,6 +54,9 @@ uint8_t write_mem=0;
 uint8_t show_action_calls=0;
 uint8_t show_compilation_time=0;
 uint8_t do_save_library=0;
+
+
+uint8_t was_error=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
@@ -429,6 +432,10 @@ static void run_emulator(void)
 
 			}
 		}
+		if (PC==0xB0F9 || PC==0xA391)
+		{
+			was_error=1;
+		}
 		step6502();
 
 		cycles++;
@@ -629,7 +636,7 @@ int main(int argc, char **argv)
 	char oute[256]={0};
 	char outc[256]={0};
 
-	if (read6502(0x550)) {
+	if (was_error) {
 		action_string_to_c(0x900,oute,sizeof(oute));
 
 		if (strlen(oute)!=0)
