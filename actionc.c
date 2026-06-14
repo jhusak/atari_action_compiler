@@ -629,7 +629,7 @@ int main(int argc, char **argv)
 	char oute[256]={0};
 	char outc[256]={0};
 
-	if (read6502(0x900)) {
+	if (read6502(0x550)) {
 		action_string_to_c(0x900,oute,sizeof(oute));
 
 		if (strlen(oute)!=0)
