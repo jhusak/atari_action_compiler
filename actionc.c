@@ -399,34 +399,34 @@ static void run_emulator(void)
 		//fprintf(stderr,"%04x\n",PC);
 		//
 		// CHECK FOR ACTION CALL
-		if (show_action_calls) {
-			if (PC==0xBFB7)
+		if (PC==0xBFB7)
+		{
+			if (A==0x20)
 			{
-				if (A==0x20)
+				if (Y>=0xa0 && Y<0xbf)
 				{
-					if (Y>=0xa0 && Y<0xbf)
-					{
-						int ln=Devices_H_GetLastReadLineNumber();
-						int a=read6502word(0xe);
-						int call=(Y<<8)+X;
-						int obank= bankA000_offset;
-						bankA000_offset=0x1000;
-						crawl6502(call);	
-						bankA000_offset=obank;
+					int ln=Devices_H_GetLastReadLineNumber();
+					int a=read6502word(0xe);
+					int call=(Y<<8)+X;
+					int obank= bankA000_offset;
+					bankA000_offset=0x1000;
+					crawl6502(call);
+					bankA000_offset=obank;
 
+					if (show_action_calls) {
 						printf("LIBCALL: %04x: JSR %04x",a,call);
 						if (functab[call]!=NULL) printf("   %s",functab[call]);
 						printf("\n");
-						if (show_action_calls==2) {
-							char oute[256];
-							action_string_to_c(0x900,oute,sizeof(oute));
-
-							if (strlen(oute)!=0)
-								printf("Line %d: %s\n",ln, oute);
-						}
 					}
+					if (show_action_calls==2) {
+						char oute[256];
+						action_string_to_c(0x900,oute,sizeof(oute));
 
+						if (strlen(oute)!=0)
+							printf("Line %d: %s\n",ln, oute);
+					}
 				}
+
 			}
 		}
 		step6502();
