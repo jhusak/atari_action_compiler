@@ -29,9 +29,11 @@
  * The software is "as is". No responsibility taken, use it as you want, but mention the author.
  */
 
-
+#include "actionc.h"
 #include "fake6502.h"
 #include "devices.h"
+#include "crawler.h"
+#include "save_exec_lib.h"
 
 #define GO_TO_COMPILER	1
 #define RAM_SIZE        65536
@@ -51,6 +53,7 @@ uint8_t force_write=0;
 uint8_t write_mem=0;
 uint8_t show_action_calls=0;
 uint8_t show_compilation_time=0;
+uint8_t do_save_library=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36.c"
@@ -210,7 +213,7 @@ static int running = 1;
 
 /* ========================================================= */
 
-static void fatal(const char *msg)
+void fatal(const char *msg)
 {
     fprintf(stderr, "fatal: %s\n", msg);
     exit(1);
@@ -406,6 +409,11 @@ static void run_emulator(void)
 						int ln=Devices_H_GetLastReadLineNumber();
 						int a=read6502word(0xe);
 						int call=(Y<<8)+X;
+						int obank= bankA000_offset;
+						bankA000_offset=0x1000;
+						crawl6502(call);	
+						bankA000_offset=obank;
+
 						printf("LIBCALL: %04x: JSR %04x",a,call);
 						if (functab[call]!=NULL) printf("   %s",functab[call]);
 						printf("\n");
@@ -419,8 +427,6 @@ static void run_emulator(void)
 					}
 
 				}
-				diss(A,X,Y);
-				printf("\n");
 			}
 		}
 		step6502();
@@ -502,6 +508,7 @@ static void usage(const char *prog)
 			"	-C	- print action library calls during compilation along with code\n"
 			"	-w	- write mem.sav (for inspection)\n"
 			"	-t	- show compilation time\n"
+			"	-l	- link with library functions used\n"
 			"	-m addr val - like SET addr=val in Action!; may be used multiple times\n",
 			prog);
 
@@ -585,6 +592,11 @@ int main(int argc, char **argv)
 			show_compilation_time=1;
 		}
 
+		if (strcmp(argv[i], "-l") == 0) {
+			do_save_library=1;
+		}
+
+
 		if (strcmp(argv[i], "-m") == 0) {
 
 			uint16_t addr;
@@ -635,7 +647,21 @@ int main(int argc, char **argv)
 
 	if (write_mem) {
 		save_memory_full();
+		save_crawl_mem();
 	}
+	if (do_save_library)
+	{
+		char * libname=NULL;
+		asprintf(&libname,"%s.%s",filename_out,"lib");
+		if (!libname) fatal("Cannot open .lib file for output");
+		
+		bankA000_offset=0x1000;
+		save_used_functions_as_executable(libname);
+		free(libname);
+
+	}
+
+
 
 	// restore terminal
 #if TERMINAL

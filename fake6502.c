@@ -68,19 +68,8 @@ static void zpx()  { ea = (read6502(PC++) + X) & 0xff; }
 static void zpy()  { ea = (read6502(PC++) + Y) & 0xff; }
 static void abso() { ea = read6502word(PC); PC += 2; }
 static void rel()  { ea = PC+1; ea += (int8_t )read6502(PC++); }
-
-static void absx() {
-    ea = read6502word(PC);
-    ea += X;
-    PC += 2;
-}
-
-static void absy() {
-    ea = read6502word(PC);
-    ea += Y;
-    PC += 2;
-}
-
+static void absx() { ea = read6502word(PC); ea += X; PC += 2; }
+static void absy() { ea = read6502word(PC); ea += Y; PC += 2; }
 static void ind() {
     ea = read6502word(PC);
     uint16_t ea2 = (ea & 0xff00) | ((ea + 1) & 0xff); // page wrap bug!
@@ -351,8 +340,8 @@ static void LXA() { A = X = ( A | 0xee) & getvalue(); calcZN(A); }
 
 // ----------------------------------------------------------------------------
 
-#define MAKE_ADDR_TABLE(t,op) 	\
-static void (*t[256])(op) = {\
+#define MAKE_ADDR_TABLE(t) 	\
+t = {\
 /* 0    1   2    3   4   5   6   7   8    9   A    B    C    D    E    F */\
   imp,indx,imp,indx, zp, zp, zp, zp,imp, imm,acc, imm,abso,abso,abso,abso, /* 0*/\
   rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx, /* 1*/\
@@ -372,38 +361,23 @@ static void (*t[256])(op) = {\
   rel,indy,imp,indy,zpx,zpx,zpx,zpx,imp,absy,imp,absy,absx,absx,absx,absx  /* F*/\
 }
 
-MAKE_ADDR_TABLE(addrtable,void);
+MAKE_ADDR_TABLE(static void (*addrtable[256])(void));
 
-static void imp_diss(uint16_t PC) { };
-static void acc_diss(uint16_t PC) { };
-static void imm_diss(uint16_t PC) {  printf("#$%02x",read6502(PC));};
-static void zp_diss(uint16_t PC) {  printf("%02x",read6502(PC));};
-static void zpx_diss(uint16_t PC) { printf("(%02x,x)", (read6502(PC)));};
-static void zpy_diss(uint16_t PC) { printf("(%02x),y", (read6502(PC)));};
-static void abso_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
-static void absx_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
-static void absy_diss(uint16_t PC) { printf("%04x",read6502word(PC));};
-static void rel_diss(uint16_t PC) { printf("%d",PC+1+(int8_t )read6502(PC));};
-static void ind_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
-static void indx_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
-static void indy_diss(uint16_t PC) { printf("(%04x)",read6502word(PC));};
+#define imp  1
+#define acc  1
+#define imm  2
+#define zp   2
+#define zpx  2
+#define zpy  2
+#define abso 3
+#define absx 3
+#define absy 3
+#define rel  2
+#define ind  3
+#define indx 2
+#define indy 2
 
-
-#define imp  imp_diss
-#define acc  acc_diss
-#define imm  imm_diss
-#define zp   zp_diss
-#define zpx  zpx_diss
-#define zpy  zpy_diss
-#define abso abso_diss
-#define absx absx_diss
-#define absy absy_diss
-#define rel  rel_diss
-#define ind  ind_diss
-#define indx indx_diss
-#define indy indy_diss
-
-MAKE_ADDR_TABLE(disasstable,uint16_t a);
+MAKE_ADDR_TABLE(uint8_t lentable[256]);
 
 #define MAKE_OPER_TABLE(table) 	\
 static table  = {\
@@ -428,19 +402,6 @@ static table  = {\
 #define M(a)	a
 
 MAKE_OPER_TABLE(void (*optable[256])());
-
-#undef M
-#define M(a)	#a
-
-MAKE_OPER_TABLE(char * dissnametable[256]);
-
-
-void diss(uint8_t a, uint8_t x, uint8_t y)
-{
-	printf("%04x	",read6502word(0xae));
-	printf("%s ",dissnametable[a]);
-	(*disasstable[opcode])(x+(y<<8));
-}
 
 int nmi6502() {
     push16(PC);

@@ -23,3 +23,5 @@ int nmi6502(void);
 int reset6502(void);
 int irq6502(void);
 int step6502(void);
+
+extern uint8_t lentable[256];
