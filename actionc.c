@@ -420,7 +420,8 @@ static void run_emulator(void)
 
 			}
 		}
-		if (PC==0xB0F9 || PC==0xA391)
+		if (PC==0xB0F9)
+		//if (PC==0xB0F9 || PC==0xA391)
 		{
 			was_error=1;
 		}
