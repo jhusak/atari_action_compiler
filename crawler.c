@@ -82,7 +82,7 @@ void crawl6502(uint16_t entry)
 
 			uint8_t op = read6502(pc);
 			uint8_t len = lentable[op];
-			if (pc>=0xa000 && pc<0xc000)
+			//if (pc>=0xa000 && pc<0xc000)
 			//fprintf(stderr, "addr: %04x val: %02x len: %d\n",pc, op, len);
 
 			visited[pc] = 1;
@@ -123,7 +123,7 @@ void crawl6502(uint16_t entry)
 				uint16_t itarget = read6502word(pc + 1);
 				uint16_t target=read6502word(itarget);
 				if (target>=0xA000 && target<0xc000) {
-					//fprintf(stderr, "enqueued addr %04x from (%04x)\n",target,itarget);
+				//	fprintf(stderr, "enqueued addr %04x from (%04x)\n",target,itarget);
 					enqueue(target);
 				}
 				break;
@@ -146,7 +146,7 @@ void crawl6502(uint16_t entry)
 			pc += len;
 		}
 	}
-			//fprintf(stderr, "ended\n");
+	//fprintf(stderr, "ended\n");
 }
 void save_crawl_mem()
 {
