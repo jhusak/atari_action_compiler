@@ -19,14 +19,14 @@ int save_used_functions_as_executable(const char *filename)
 	if (!f)
 		return 0;
 
-	/* preambuła Atari DOS */
+	/* preamble Atari DOS */
 	write_word_le(f, 0xFFFF);
 
 	addr = 0xA000;
 
 	while (addr < 0xC000)
 	{
-		/* szukaj początku segmentu */
+		/* first used byte in segment */
 		while (addr < 0xC000 && !visited[addr])
 			addr++;
 
@@ -50,13 +50,10 @@ int save_used_functions_as_executable(const char *filename)
 				gap++;
 
 				/*
-				 * Dzielimy dopiero gdy mamy >=5 zer.
-				 * Pierwsze 4 zera zostają w segmencie.
+				 * more than 5 zeros ends segment
 				 */
 				if (gap >= 5)
 					break;
-
-				//end = addr;
 			}
 		}
 

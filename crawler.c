@@ -6,7 +6,6 @@
 
 #define MEM_SIZE 65536
 
-//#include "inc/action_36.c"
 extern uint8_t lentable[256];
 extern uint8_t action_bin[16384];
 
@@ -36,8 +35,6 @@ static int dequeue(uint16_t *addr)
 	return 1;
 }
 
-/* Minimalna tabela długości instrukcji.
-   Należy ją uzupełnić dla wszystkich 256 opcode'ów. */
 
 static uint16_t read16(uint16_t address)
 {

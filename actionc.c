@@ -37,7 +37,6 @@
 
 #define GO_TO_COMPILER	1
 #define RAM_SIZE        65536
-//#define ACTION_LOAD     0x2000
 
 extern uint8_t memory[65536];
 extern uint16_t PC;
@@ -256,12 +255,6 @@ static void set_reset_vector(uint16_t addr)
 /* ========================================================= */
 
 /*
- * bardzo prosty host_open/host_close
- *
- * handle 0 = input.act
- * handle 1 = output
- * handle >=2 = include files
- *
  * ACTION string:
  *   [len][ascii...]
  */
@@ -282,8 +275,6 @@ static void action_string_to_c(
 
     ptr++;
     for (uint8_t i=0; i<len; i++) out[i]=read6502(ptr+i);
-
-    //memcpy(out, &memory[ptr + 1], len);
 
     out[len] = 0;
 }
@@ -371,12 +362,8 @@ static void run_emulator(void)
 
 	struct timespec now, next_time;
 
-	/* pobierz aktualny czas */
+	/*  */
 	clock_gettime(CLOCK_MONOTONIC, &now);
-
-	/* dodaj 1/50 sekundy = 20 000 000 ns */
-	next_time.tv_nsec += 20000000;
-
 
 
 	//write6502(0x8, 0xff);
@@ -579,23 +566,23 @@ int main(int argc, char **argv)
 
 	for (i = 3; i < argc; i++) {
 
-		if (strcmp(argv[i], "-a") == 0) { // default text mode on, here set binary for texts
+		if (strcmp(argv[i], "-a") == 0) { // default unix format, sets atari format
 			h_textmode=0x00;
 		}
 
-		if (strcmp(argv[i], "-c") == 0) { // default no, here set showcalls during compile
+		if (strcmp(argv[i], "-c") == 0) { // sets showcalls during compile
 			show_action_calls=1;
 		}
 
-		if (strcmp(argv[i], "-C") == 0) { // default no, here set showcalls during compile
+		if (strcmp(argv[i], "-C") == 0) { // sets showcalls along lines nearby.
 			show_action_calls=2;
 		}
 
-		if (strcmp(argv[i], "-w") == 0) { // default text mode, here set binary for texts
+		if (strcmp(argv[i], "-w") == 0) { // save mem image
 			write_mem=1;
 		}
 
-		if (strcmp(argv[i], "-t") == 0) { // default no, here set showcalls during compile
+		if (strcmp(argv[i], "-t") == 0) {
 			show_compilation_time=1;
 		}
 
