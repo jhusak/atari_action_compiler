@@ -626,15 +626,16 @@ int main(int argc, char **argv)
 	
 	run_emulator();
 
-	char oute[256];
-	char outc[256];
+	char oute[256]={0};
+	char outc[256]={0};
 
-	action_string_to_c(0x900,oute,sizeof(oute));
+	if (read6502(0x900)) {
+		action_string_to_c(0x900,oute,sizeof(oute));
 
-	if (strlen(oute)!=0)
-		fprintf(stderr,"%s\n",oute);
-	action_string_to_c(0x550,outc,sizeof(outc));
-
+		if (strlen(oute)!=0)
+			fprintf(stderr,"%s\n",oute);
+		action_string_to_c(0x550,outc,sizeof(outc));
+	}
 	int error=0;
 	if (strlen(outc)!=0)
 	{
