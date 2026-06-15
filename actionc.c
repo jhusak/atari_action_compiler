@@ -58,7 +58,7 @@ uint8_t do_save_library=0;
 uint8_t was_error=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
-#include "inc/action_36.c"
+#include "inc/action_36_no_zap.c"
 typedef uint8_t UBYTE;
 #include "inc/altirraos_xl.c"
 //#include "inc/atariosxl.c"
@@ -144,6 +144,7 @@ char * get_error(char * err)
 
 
 int bankA000_offset=0x1000;
+uint8_t * act_ptr=NULL;
 
 uint8_t read6502(uint16_t address) {
 	
@@ -153,12 +154,12 @@ uint8_t read6502(uint16_t address) {
 	// banking
 	if (address>=0xa000 && address<0xb000)
 	{
-		return action_bin[address-0xa000+bankA000_offset];
+		return act_ptr[address-0xa000+bankA000_offset];
 	}
 	// constant place
 	if (address>=0xb000 && address<0xc000)
 	{
-		return action_bin[address-0xb000];
+		return act_ptr[address-0xb000];
 	}
 	if (address<0xa000) return memory[address];
 
@@ -228,10 +229,7 @@ static void save_memory_full()
 {
     FILE *f;
 
-    f = fopen("memfull.sav", "wb");
-
-    if (!f)
-        fatal("cannot open file memfull.sav");
+    FOPEN(f,"memfull.sav", "wb");
 
     for (int i=0; i<65536; i++)
     {
@@ -553,6 +551,7 @@ int main(int argc, char **argv)
 	reset6502();
 
 	// PRE-INIT emulator
+	act_ptr=action_bin_nozap;
 	
 	force_write=1;
 	Devices_Frame();
@@ -628,6 +627,7 @@ int main(int argc, char **argv)
 
 	if (write_mem) {
 		save_memory_full();
+		bankA000_offset=0x1000;
 		save_crawl_mem();
 	}
 

@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "crawler.h"
 #include "actionc.h"
 
 #define MEM_SIZE 65536
 
-extern uint8_t lentable[256];
-extern uint8_t action_bin[16384];
 
 uint8_t vmem[MEM_SIZE];
 uint8_t visited[MEM_SIZE];
@@ -33,22 +32,6 @@ static int dequeue(uint16_t *addr)
 
 	*addr = queue[qhead++].addr;
 	return 1;
-}
-
-
-static uint16_t read16(uint16_t address)
-{
-	if (address>=0xa000 && address<0xb000)
-	{
-		return action_bin[address-0xa000+0x1000];
-	}
-	// constant place
-	if (address>=0xb000 && address<0xc000)
-	{
-		return action_bin[address-0xb000];
-	}
-
-	return vmem[address] | (vmem[(address + 1) & 0xFFFF] << 8);
 }
 
 static int is_branch(uint8_t op)
@@ -97,7 +80,8 @@ void crawl6502(uint16_t entry)
 			if (op == 0x20) {
 				uint16_t target = read6502word(pc + 1);
 
-				enqueue(target);
+				if (target>=0xa000 && target<0xc000)
+					enqueue(target);
 				//fprintf(stderr, "jsr addr: %04x target: %04x\n",pc,target);
 
 				pc += 3;
@@ -108,6 +92,7 @@ void crawl6502(uint16_t entry)
 			if (op == 0x4C) {
 				uint16_t target = read6502word(pc + 1);
 
+				if (target>=0xa000 && target<0xc000)
 				enqueue(target);
 				//fprintf(stderr, "jmp addr: %04x target: %04x\n",pc,target);
 				break;
@@ -116,7 +101,6 @@ void crawl6502(uint16_t entry)
 			/* JMP indirect */
 			if (op == 0x6C) {
 				//fprintf(stderr, "jmp (xxxx) encountered. break crawl;\n");
-				/* nie wiemy dokąd statycznie */
 				uint16_t itarget = read6502word(pc + 1);
 				uint16_t target=read6502word(itarget);
 				if (target>=0xA000 && target<0xc000) {
@@ -130,8 +114,7 @@ void crawl6502(uint16_t entry)
 			if (is_branch(op)) {
 				int8_t disp = (int8_t)read6502(pc + 1);
 
-				uint16_t taken =
-					(uint16_t)(pc + 2 + disp);
+				uint16_t taken = (uint16_t)(pc + 2 + disp);
 
 				enqueue(taken);
 				//fprintf(stderr, "enq addr: %04x taken: %04x\n",pc,taken);
@@ -145,31 +128,22 @@ void crawl6502(uint16_t entry)
 	}
 	//fprintf(stderr, "ended\n");
 }
+
 void save_crawl_mem()
 {
     FILE *f;
 
-    f = fopen("memcrawl.sav", "wb");
+    FOPEN(f,"memcrawl.sav","wb")
 
-    if (!f)
-        fatal("cannot open file memfull.sav");
-
-    for (int i=0xa000; i<0xc000; i+=2)
+    for (int i=0xa000; i<0xc000; i++)
     {
-	    uint16_t c=read16(i);
-	    uint8_t l=c&0xff;
-	    uint8_t h=c>>8;
-
-	    fwrite(&l, 1, 1, f);
-	    fwrite(&h, 1, 1, f);
+	    uint8_t c=read6502(i);
+	    fwrite(&c, 1, 1, f);
     }
 
     fclose(f);
 
-    f = fopen("memvisited.sav", "wb");
-
-    if (!f)
-        fatal("cannot open file memvisited.sav");
+    FOPEN(f,"memvisited.sav", "wb");
 
     for (int i=0xa000; i<0xc000; i++)
     {

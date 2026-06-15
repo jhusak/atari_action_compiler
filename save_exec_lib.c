@@ -3,7 +3,7 @@
 
 extern uint8_t visited[65536];
 extern uint8_t read6502(uint16_t addr);
-
+#include "inc/jumptab.c"
 static void write_word_le(FILE *f, uint16_t v)
 {
 	fputc(v & 0xff, f);
@@ -15,14 +15,26 @@ int save_used_functions_as_executable(const char *filename)
 	FILE *f;
 	uint32_t addr;
 
-	f = fopen(filename, "wb");
-	if (!f)
-		return 0;
 
-	/* preamble Atari DOS */
-	write_word_le(f, 0xFFFF);
+	int header_generated=0;
 
 	addr = 0xA000;
+
+	// those two are good enough for alitrra os
+	for (int i=0xa684; i<0xa68a;i++)
+		visited[i]=1;
+	for (int i=0xb0b0; i<0xb0b1;i++)
+		visited[i]=1;
+
+
+	// those ar neede by atari os
+	for (int i=0xa300; i<0xa800;i++)
+		visited[i]=1;
+	for (int i=0xb004; i<0xb06e;i++)
+		visited[i]=1;
+	// visited[0xb0b1]=1;
+	// visited[0xb0b2]=1;
+
 
 	while (addr < 0xC000)
 	{
@@ -32,6 +44,19 @@ int save_used_functions_as_executable(const char *filename)
 
 		if (addr >= 0xC000)
 			break;
+
+		if (!header_generated) {
+			f = fopen(filename, "wb");
+			if (!f)
+				return 0;
+			/* preamble Atari DOS */
+			write_word_le(f, 0xFFFF);
+
+			for (uint32_t i=0; i<sizeof(jumptab); i++)
+				fputc(jumptab[i], f);
+			header_generated=1;
+		}
+
 
 		uint32_t start = addr;
 		uint32_t end = addr;
@@ -64,6 +89,7 @@ int save_used_functions_as_executable(const char *filename)
 			fputc(read6502((uint16_t)a), f);
 	}
 
-	fclose(f);
+	if (header_generated)
+		fclose(f);
 	return 1;
 }
