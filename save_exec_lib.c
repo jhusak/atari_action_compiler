@@ -28,10 +28,12 @@ int save_used_functions_as_executable(const char *filename)
 
 
 	// those ar neede by atari os
-	for (int i=0xa300; i<0xa800;i++)
-		visited[i]=1;
-	for (int i=0xb004; i<0xb06e;i++)
-		visited[i]=1;
+	//for (int i=0xa300; i<0xa800;i++)
+	//	visited[i]=1;
+	//for (int i=0xb004; i<0xb06e;i++)
+	//	visited[i]=1;
+	//for (int i=0xa000; i<0xb800;i++)
+	//	visited[i]=1;
 	// visited[0xb0b1]=1;
 	// visited[0xb0b2]=1;
 
