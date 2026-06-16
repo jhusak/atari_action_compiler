@@ -2,9 +2,9 @@
 
 Atari Action! Compiler in a sandbox made of fake6502 (MOS 6502 Emulator in C) written in C.
 
-It emulates original Action! cartridge sandboxed in bare atari 8-bit environment. Only CPU is emulated, no nmi, but every virtual frame (originally 1/50 sec) the system clock is increased. The frame lasts about 30000 instructions (as cycles are not counted). It uses XL rom (sorry for that, maybe altirra rom will be better).
+It emulates original Action! cartridge sandboxed in bare atari 8-bit environment. Only CPU is emulated, no nmi, but every virtual frame (originally 1/50 sec) the system clock is increased. The frame lasts about 30000 instructions (as cycles are not counted). It uses Altirra XL rom.
 
-The cartridge is not modified in any way - some hooks are added (for example recognising idle loop, inserting filenames into filename buffers and poke(764,12) :)) After compile, the error code is gathered and last compiled line printed, as in original cartridge.
+The cartridge used is the original with memory zap parts nopped, and some hooks are added (for example recognising idle loop, inserting filenames into filename buffers and poke(764,12) :)) After compile, the error code is gathered and last compiled line printed, as in original cartridge.
 
 It works in a way that a flag setting to Monitor mode is set, then C"filename" command is invoked, waiting for IDLE loop, then W"filename" is invoked, printed error texts if any and program ends.
 
@@ -43,6 +43,8 @@ usage:
         to generate bells and keyboard clicks (silent, of course). Without emulated vcount Action! loops on generating clicks :)
 
     -t  - show compilation time.
+
+    -l  - EXPERIMENTAL - includes dynamically built Action! library (only used functions).
 
     -m addr val - like SET addr=val in Action!; may be used multiple times
 

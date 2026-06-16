@@ -2,9 +2,9 @@
 
 Atari Action Compiler to kompilator Atari Action! uruchamiany w piaskownicy (sandboxie) - minimalistycznym emulatorze Atari 8-bit zbudowanym na bazie fake6502 - emulatora procesora MOS 6502.
 
-Emuluje kod oryginalnego kartridża Action! w środowisku „gołego” Atari 8-bit. Emulowany jest wyłącznie procesor CPU — brak obsługi NMI — jednak przy każdej wirtualnej ramce (oryginalnie 1/50 sekundy) zwiększany jest zegar systemowy. Jedna ramka trwa około 30 000 instrukcji (ponieważ cykle procesora nie są zliczane). Wykorzystywany jest ROM XL (być może lepszym wyborem byłby ROM Altirra ze względów licencyjnych).
+Emuluje kod oryginalnego kartridża Action! w środowisku „gołego” Atari 8-bit. Emulowany jest wyłącznie procesor CPU — brak obsługi NMI — jednak przy każdej wirtualnej ramce (oryginalnie 1/50 sekundy) zwiększany jest zegar systemowy. Jedna ramka trwa około 30 000 instrukcji (ponieważ cykle procesora nie są zliczane). Wykorzystywany jest ROM Altirra XL.
 
-Obraz kartridża nie został w żaden sposób zmodyfikowany — dodano jedynie kilka hooków na określone adresy i warunki, na przykład rozpoznawanie pętli bezczynności (idle loop), wstawianie nazw plików do buforów nazw plików oraz poke(764,12) (wciśnięcie return)  :). Po zakończeniu kompilacji pobierany jest kod błędu i wyświetlana jest ostatnia kompilowana linia, tak jak w oryginalnym kartridżu.
+Obraz kartridża nie został w istotny sposób zmodyfikowany - usunięto fragmenty niszczące pamięć (zabezpieczenie przed używaniem obrazu kartridża w RAM) oraz dodano kilka hooków na określone adresy i warunki, na przykład rozpoznawanie pętli bezczynności (idle loop), wstawianie nazw plików do buforów nazw plików oraz poke(764,12) (wciśnięcie return)  :). Po zakończeniu kompilacji pobierany jest kod błędu i wyświetlana jest ostatnia kompilowana linia, tak jak w oryginalnym kartridżu.
 
 Działa to w następujący sposób: ustawiana jest flaga trybu Monitor, uruchamiany jest kartridż, następnie wywoływana jest komenda C"nazwa_pliku", po czym program czeka na wejście w pętlę IDLE. Następnie wywoływana jest komenda W"nazwa_pliku", wyświetlane są komunikaty błędów (jeśli wystąpiły), a program kończy działanie.
 
