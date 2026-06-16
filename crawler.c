@@ -56,13 +56,17 @@ void crawl6502(uint16_t entry)
 
 		uint16_t pc = entry;
 
-		switch (entry){
+		switch (entry){ // Applying patches - for external data segments
 			case 0xa654: //Graphics
 				visited[0xb0b0]=1;
-				for (i=0xa684; i<0xa688; i++) visited[i]=1;
+				for (i=0xa684; i<0xa688; i++) visited[i]=1; // E:
 			case 0xa68c: //DrawTo
-				for (i=0xa688; i<0xa68c; i++) visited[i]=1;
+				for (i=0xa688; i<0xa68c; i++) visited[i]=1; // S:
 				break;
+			case 0xa737:// PTrig
+				for (i=0xa74a; i<0xa74e; i++) visited[i]=1; // button masks
+				break; 
+
 		}
 
 		while (1) {
