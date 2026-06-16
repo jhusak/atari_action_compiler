@@ -21,10 +21,6 @@ int save_used_functions_as_executable(const char *filename)
 	addr = 0xA000;
 
 	// those two are good enough for alitrra os
-	for (int i=0xa684; i<0xa68a;i++)
-		visited[i]=1;
-	for (int i=0xb0b0; i<0xb0b1;i++)
-		visited[i]=1;
 
 
 	// those ar neede by atari os
