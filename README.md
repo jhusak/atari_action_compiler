@@ -10,6 +10,8 @@ It works in a way that a flag setting to Monitor mode is set, then C"filename" c
 
 The compatibility is not full 100% - as user may use SET instruction, which writes to memory, and there some uses for it. It may not work if used on hardware registers (which are not implemented) or others strange uses. But when you use them as they were made to, you should not encounter any problems.
 
+The EXPERIMENTAL dynamic library linking works in general, there are some minor issues to fix, for example in Printf the %H marker goes to print hex function in another bank. So crawler copies the function to area under Axxx, that is used during compilation time, but it is not used during runtime.
+
 There is no overhead by disk operating system (whole available memory may be used), from the (reasonable) beginning to 0x93ff.
 
 The Action! cartridge has it's full potential. It should work exactly as original, including all included libraries (beware of case sensitive).
