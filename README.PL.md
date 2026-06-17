@@ -10,7 +10,7 @@ Działa to w następujący sposób: ustawiana jest flaga trybu Monitor, uruchami
 
 Zgodność nie jest stuprocentowa. Użytkownik może użyć instrukcji SET, która zapisuje dane do pamięci, a jeśli zapis następuje do rejestrów sprzętowych (które nie są zaimplementowane) lub w przypadku innych nietypowych zastosowań - efekt może być inny od oryginału. Jednak jeśli użytkownik skorzysta z tych instrukcji zgodnie z ich przeznaczeniem (np. ustawianie adresu startowego), nie powinien napotkać problemów.
 
-Eksperymentalne dynamiczne linkowanie bibliotek zasadniczo działa poprawnie. Pozostało jeszcze kilka drobnych problemów, na przykład w Printf znacznik %H odwołuje się do funkcji wyświetlania liczby szesnastkowej znajdującej się w innym banku pamięci. Crawler kopiuje tę funkcję do obszaru $Axxx, który jest wykorzystywany podczas kompilacji, ale nie jest używany w czasie wykonywania programu.
+Eksperymentalne dynamiczne linkowanie bibliotek zasadniczo działa poprawnie. Pozostało jeszcze kilka drobnych problemów, na przykład (problem już rozwiązany) w Printf znacznik %H odwołuje się do funkcji wyświetlania liczby szesnastkowej znajdującej się w innym banku pamięci. Crawler kopiuje tę funkcję do obszaru $Axxx, który jest wykorzystywany podczas kompilacji, ale nie jest używany w czasie wykonywania programu.
 
 Nie występuje narzut związany z systemem operacyjnym dysku (DOS), dzięki czemu można wykorzystać całą dostępną pamięć — od rozsądnego początku obszaru pamięci aż do adresu 0x93FF.
 
