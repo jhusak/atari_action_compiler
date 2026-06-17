@@ -59,6 +59,7 @@ uint8_t was_error=0;
 #include "inc/asciitoatari.c"
 #include "inc/memory.c"
 #include "inc/action_36_no_zap.c"
+uint8_t action_lib[0x2000];
 typedef uint8_t UBYTE;
 #include "inc/altirraos_xl.c"
 //#include "inc/atariosxl.c"
@@ -398,9 +399,11 @@ static void run_emulator(void)
 					int a=read6502word(0xe);
 					int call=(Y<<8)+X;
 					int obank= bankA000_offset;
+					act_ptr=action_lib;
 					bankA000_offset=0x1000;
 					crawl6502(call);
 					bankA000_offset=obank;
+					act_ptr=action_bin_nozap;
 
 					if (show_action_calls) {
 						printf("LIBCALL: %04x: JSR %04x",a,call);
@@ -551,6 +554,7 @@ int main(int argc, char **argv)
 	reset6502();
 
 	// PRE-INIT emulator
+	memcpy(action_lib,action_bin_nozap,0x2000);
 	act_ptr=action_bin_nozap;
 	
 	force_write=1;
@@ -625,9 +629,11 @@ int main(int argc, char **argv)
 	fclose(fin);
 	fclose(fout);
 
+	bankA000_offset=0x1000;
+	act_ptr=action_lib;
+
 	if (write_mem) {
 		save_memory_full();
-		bankA000_offset=0x1000;
 		save_crawl_mem();
 	}
 

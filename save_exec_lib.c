@@ -4,6 +4,7 @@
 extern uint8_t visited[65536];
 extern uint8_t read6502(uint16_t addr);
 #include "inc/jumptab.c"
+#include "actionc.h"
 static void write_word_le(FILE *f, uint16_t v)
 {
 	fputc(v & 0xff, f);
@@ -83,8 +84,13 @@ int save_used_functions_as_executable(const char *filename)
 		write_word_le(f, (uint16_t)start);
 		write_word_le(f, (uint16_t)end);
 
-		for (uint32_t a = start; a <= end; a++)
-			fputc(read6502((uint16_t)a), f);
+		for (uint32_t a = start; a <= end; a++) {
+			if (a<0xb000)
+				fputc(action_lib[(uint16_t)a-0xA000+0x1000], f);
+			else
+				fputc(action_lib[(uint16_t)a-0xB000], f);
+
+		}
 	}
 
 	if (header_generated)
