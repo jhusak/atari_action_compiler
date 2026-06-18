@@ -1,5 +1,7 @@
 # Things that are not working...
 
-The library dynamic generation is not working well yet.
+The library dynamic generation may not work well, sometimes a part of a function switches the bank and this is the job for superman.
 
-Test Suite not done yet.
+But tests in /tests catalog do work.
+
+
