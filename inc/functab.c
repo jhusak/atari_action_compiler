@@ -1,3 +1,4 @@
+functab[0xA000]="allocate ; Allocate(size)";
 functab[0xA000]="multi";
 functab[0xA04A]="mulb";
 functab[0xA06C]="smops";
@@ -325,7 +326,9 @@ functab[0xB515]="lexset";
 functab[0xB53A]="getadr";
 functab[0xB540]="lexexpand";
 functab[0xB564]="lexbuf";
+functab[0xB5BE]="lsh1 ;LShift(val, 4)";
 functab[0xB5BE]="lsh1 ;LShift(val, cnt)";
+functab[0xB5C0]="lsh1 ;LShift(val, cnt)";
 functab[0xB5CF]="nextup ; NextUp()";
 functab[0xB5D3]="nextdwn ; NextDwn()";
 functab[0xB5D5]="next ; Next(,,dir)";

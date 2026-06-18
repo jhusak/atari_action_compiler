@@ -74,7 +74,7 @@ uint8_t write_mem=0;
 uint8_t show_action_calls=0;
 uint8_t show_compilation_time=0;
 uint8_t do_save_library=0;
-
+uint8_t generate_run_addr=0;
 
 uint8_t was_error=0;
 #include "inc/asciitoatari.c"
@@ -527,6 +527,7 @@ static void usage(const char *prog)
 			"	-w	- write mem.sav (for inspection)\n"
 			"	-t	- show compilation time\n"
 			"	-l	- link with library functions used\n"
+			"	-r	- run addr instead of init\n"
 			"	-m addr val - like SET addr=val in Action!; may be used multiple times\n",
 			prog);
 
@@ -576,6 +577,7 @@ int main(int argc, char **argv)
 
 	// PRE-INIT emulator
 	memcpy(action_lib,action_bin_nozap,0x2000);
+	
 	act_ptr=action_bin_nozap;
 	
 	force_write=1;
@@ -601,6 +603,7 @@ int main(int argc, char **argv)
 		EIF("-w") write_mem=1; // save mem image
 		EIF("-t") show_compilation_time=1;
 		EIF("-l") do_save_library=1;
+		EIF("-r") generate_run_addr=1;
 		EIF("-m") 
 			uint16_t addr;
 			uint8_t val;
@@ -624,6 +627,14 @@ int main(int argc, char **argv)
 			fprintf(stderr, "Unknown argument: '%s'\n", argv[i]);
 			exit(1);
 		}
+	}
+
+	if (generate_run_addr) {
+		action_bin_nozap[0x3ec1]=0xe0;
+		action_bin_nozap[0x3ec3]=0xe1;
+	} else {
+		action_bin_nozap[0x3ec1]=0xe2;
+		action_bin_nozap[0x3ec3]=0xe3;
 	}
 
 	// cart start address. ram is pre-inited with real startup values
