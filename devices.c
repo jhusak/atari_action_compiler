@@ -3,6 +3,7 @@
  *
  * Copyright (C) 1995-1998 David Firth
  * Copyright (C) 1998-2010 Atari800 development team (see DOC/CREDITS)
+ * Simplified for the needs - Jakub Husak
  *
  * This file is part of the Atari800 emulator project which emulates
  * the Atari 400, 800, 800XL, 130XE, and 5200 8-bit computers.
