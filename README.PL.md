@@ -1,6 +1,12 @@
 ## Atari Action! Compiler
 
-Atari Action Compiler to kompilator Atari Action! uruchamiany w piaskownicy (sandboxie) - minimalistycznym emulatorze Atari 8-bit zbudowanym na bazie fake6502 - emulatora procesora MOS 6502.
+### Autor: Jakub Husak, 2026
+
+### STAN:
+ - Kompilator działa w 100% jak oryginał
+ - Dołączanie dynamiczne biblioteki może zawieść w niektórych przypadkach.
+
+**Atari Action Compiler** to kompilator Atari Action! uruchamiany w piaskownicy (sandboxie) - minimalistycznym emulatorze Atari 8-bit zbudowanym na bazie fake6502 - emulatora procesora MOS 6502.
 
 Emuluje kod oryginalnego kartridża Action! w środowisku „gołego” Atari 8-bit. Emulowany jest wyłącznie procesor CPU — brak obsługi NMI — jednak przy każdej wirtualnej ramce (oryginalnie 1/50 sekundy) zwiększany jest zegar systemowy. Jedna ramka trwa około 30 000 instrukcji (ponieważ cykle procesora nie są zliczane). Wykorzystywany jest ROM Altirra XL.
 
