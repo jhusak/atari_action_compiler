@@ -32,7 +32,7 @@ usage:
 
     -a	- set atari file format (0x9b = enter), default unix file format
 
-        Normally Action! gets file in atari format (enter=0x9b). But in unix/PC world enter=0x10.
+        Normally Action! gets file in atari format (enter=0x9b). But in unix/PC world enter=0xa.
         The input in unix format is translated to Atari format on the fly. However, it may be
         surprising, that you can also compile Atari format not using -b switch. But sometimes
         you have control codes in your sources. Then ctrl-J may be treated as newline, and generate an error.
