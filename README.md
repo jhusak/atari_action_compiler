@@ -26,7 +26,7 @@ The Action! cartridge has it's full potential. It should work exactly as origina
 
 usage:
 
-  ./actionc input.act output.obj \<options\>
+  ./actionc input.act output.xex \<options\>
   
     options:
 
@@ -51,6 +51,8 @@ usage:
         to generate bells and keyboard clicks (silent, of course). Without emulated vcount Action! loops on generating clicks :)
 
     -t  - show compilation time.
+
+    -r  - generate run addr instead of init
 
     -l  - EXPERIMENTAL - includes dynamically built Action! library (only used functions).
 
