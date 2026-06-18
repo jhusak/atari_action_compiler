@@ -124,7 +124,7 @@ void crawl6502(uint16_t entry)
 				{
 					uint16_t len=0xAF3D-0xAF13;
 					uint16_t dproc=0x2e0-len;
-					printf("Patching lib PrintF: %04x-%04x for %H hex output\n",0xA000+dproc,0xA000+dproc+len-1);
+					printf("Patching lib PrintF: %04x-%04x for %%H hex output\n",0xA000+dproc,0xA000+dproc+len-1);
 					for (int i=0; i<len; i++)
 					{
 						action_lib[0x1000+dproc+i]=action_bin_nozap[0x3000+0xf13+i];
