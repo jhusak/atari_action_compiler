@@ -1,6 +1,12 @@
 ## Atari Action! Compiler
 
-Atari Action! Compiler in a sandbox made of fake6502 (MOS 6502 Emulator in C) written in C.
+### Author: Jakub Husak, 2026
+
+### STATE:
+ - Compiler works in 100% as original
+ - Dynamic library linking may fail in some cases.
+
+**Atari Action Compiler** in a sandbox made of fake6502 (MOS 6502 Emulator in C) written in C.
 
 It emulates original Action! cartridge sandboxed in bare atari 8-bit environment. Only CPU is emulated, no nmi, but every virtual frame (originally 1/50 sec) the system clock is increased. The frame lasts about 30000 instructions (as cycles are not counted). It uses Altirra XL rom.
 
