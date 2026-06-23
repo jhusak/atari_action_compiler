@@ -10,7 +10,7 @@
 
 It emulates **an original Action! cartridge** sandboxed in bare atari 8-bit environment. Only CPU is emulated, no nmi, but every virtual frame (originally 1/50 sec) the system clock is increased. The frame lasts 313 lines increasing VCOUNT every several instructions (as cycles are not counted). It uses Altirra XL rom as embedded operating system.
 
-The cartridge used is the original with memory zap parts nopped, and some hooks are added (for example recognising idle loop, inserting filenames into filename buffers and poke(764,12) :)) After compile, the error code is gathered and last compiled line printed, as in original cartridge.
+The cartridge used is the original with memory zap parts nopped, and some hooks are added (for example recognising idle loop, inserting filenames into filename buffers and poke(764,12) :)) After compile, the error code is gathered and last compiled line printed, as in original cartridge. Additionally, a text representation of the error is printed.
 
 It works in a way that a flag setting to Monitor mode is set, then C"filename" command is invoked, waiting for IDLE loop, then W"filename" is invoked, printed error texts if any and program ends.
 
