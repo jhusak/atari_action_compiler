@@ -18,7 +18,7 @@ The compatibility is not full 100% - as user may use SET instruction, which writ
 
 The EXPERIMENTAL dynamic library linking works in general, there are some minor issues to fix, for example (issue solved) in Printf the %H marker goes to print hex function in another bank. So crawler copies the function to area under Axxx, that is used during compilation time, but it is not used during runtime.
 
-There is no overhead by disk operating system (whole available memory may be used), from the (reasonable) beginning to 0x93ff.
+There is no overhead by disk operating system (whole available memory may be used), from the (reasonable) beginning to 0x93ff (well, $9c00-"-pX"\*256, where default for X is 8 and may be changed) 
 
 The Action! cartridge has it's full potential. It should work exactly as original, including all included libraries (beware of case sensitive).
 
