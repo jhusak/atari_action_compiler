@@ -23,9 +23,13 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <unistd.h>
+#if defined(_WIN32) || defined(_WIN64)
+    #include <windows.h>
+#else
+    #include <termios.h>
+    #include <unistd.h>
+#endif
 #include <time.h>
-#include <termios.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <signal.h>
