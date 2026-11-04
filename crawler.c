@@ -82,7 +82,9 @@ void crawl6502(uint16_t entry)
 		switch (entry){ // Applying patches - for external data segments
 			case 0xa654: //Graphics
 				visited[0xb0b0]=1;
-				for (i=0xa684; i<0xa688; i++) visited[i]=1; // E:
+				for (i=0xa684; i<0xa688; i++) visited[i]=1; // E: 
+				// intentional fall into DrawTo
+				/* fall through */
 			case 0xa68c: //DrawTo
 				for (i=0xa688; i<0xa68c; i++) visited[i]=1; // S:
 				break;

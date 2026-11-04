@@ -2,6 +2,7 @@
 #define DEVICES_H_
 
 #include <stdio.h> /* FILENAME_MAX */
+#include <stdint.h>
 //#include "atari.h" /* UWORD */
 #define UWORD uint16_t
 

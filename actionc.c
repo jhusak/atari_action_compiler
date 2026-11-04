@@ -28,6 +28,7 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <ctype.h>
+#include <signal.h>
 
 /*
  * actionc.c
@@ -672,7 +673,8 @@ int main(int argc, char **argv)
 	if (do_save_library)
 	{
 		char * libname=NULL;
-		asprintf(&libname,"%s.%s",filename_out,"lib");
+		if (asprintf(&libname,"%s.%s",filename_out,"lib")<0) fatal("alocation error");
+		
 		if (!libname) fatal("Cannot open .lib file for output");
 		
 		bankA000_offset=0x1000;
