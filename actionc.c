@@ -236,7 +236,7 @@ static char * filename_in;
 static char * filename_out;
 
 
-static int running = 1;
+static volatile int running = 1;
 
 /* ========================================================= */
 
