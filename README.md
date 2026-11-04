@@ -65,6 +65,10 @@ usage:
 
 Compiler is in its alpha state - it means it may have bugs. However, usual use-cases work perfectly.
 
+# Compile
+
+type ./make and go!
+
 # Future releases
 
 There are some ideas. If you have ones, fill free to raise an issue :)
