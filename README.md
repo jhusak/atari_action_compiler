@@ -69,7 +69,7 @@ Compiler is in its alpha state - it means it may have bugs. However, usual use-c
 
 type ./make (on macs and linux machines) and go!
 
-or simply make (on mingw or cygwin) and go! (untested)
+or simply make (on mingw or cygwin) and go!
 
 # Future releases
 
