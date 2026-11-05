@@ -92,12 +92,42 @@ typedef uint8_t UBYTE;
 #define IS_IDLE() (PC>=0xa2e6 && PC<=0xa2ef)
 
 #if defined(_WIN32) || defined(_WIN64)
-    // MinGW może nie definiować struktury timespec w starszych wersjach
     struct my_timespec {
         long tv_sec;
         long tv_nsec;
     };
     #define PLATFORM_TIMESPEC struct my_timespec
+
+int asprintf(char **strp, const char *fmt, ...) {
+    va_list args;
+    
+    va_start(args, fmt);
+    
+    int size = vsnprintf(NULL, 0, fmt, args);
+    va_end(args);
+
+    if (size < 0) {
+        return -1;
+    }
+
+    *strp = (char *)malloc(size + 1);
+    if (*strp == NULL) {
+        return -1;
+    }
+
+    va_start(args, fmt);
+    int result = vsnprintf(*strp, size + 1, fmt, args);
+    va_end(args);
+
+    if (result < 0) {
+        free(*strp);
+        *strp = NULL;
+        return -1;
+    }
+
+    return result;
+}
+
 #else
     #include <time.h>
     #define PLATFORM_TIMESPEC struct timespec
@@ -421,7 +451,7 @@ static void run_emulator(void)
 	int compile_frames=0;
 	init_functab();
 
-	struct timespec now, next_time;
+	PLATFORM_TIMESPEC now, next_time;
 
 	/*  */
 	get_monotonic_time(&now);
