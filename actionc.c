@@ -91,6 +91,41 @@ typedef uint8_t UBYTE;
 //#include "inc/atariosxl.c"
 #define IS_IDLE() (PC>=0xa2e6 && PC<=0xa2ef)
 
+#if defined(_WIN32) || defined(_WIN64)
+    // MinGW może nie definiować struktury timespec w starszych wersjach
+    struct my_timespec {
+        long tv_sec;
+        long tv_nsec;
+    };
+    #define PLATFORM_TIMESPEC struct my_timespec
+#else
+    #include <time.h>
+    #define PLATFORM_TIMESPEC struct timespec
+#endif
+
+
+void get_monotonic_time(PLATFORM_TIMESPEC *ts) {
+#if defined(_WIN32) || defined(_WIN64)
+    static LARGE_INTEGER frequency;
+    static int initialized = 0;
+    if (!initialized) {
+        QueryPerformanceFrequency(&frequency);
+        initialized = 1;
+    }
+    
+    LARGE_INTEGER counter;
+    QueryPerformanceCounter(&counter);
+    
+    // Obliczanie sekund i nanosekund bez utraty precyzji
+    ts->tv_sec = counter.QuadPart / frequency.QuadPart;
+    ts->tv_nsec = (long)((counter.QuadPart % frequency.QuadPart) * 1000000000 / frequency.QuadPart);
+#else
+    // Na Linuksie korzystamy z oryginalnego clock_gettime
+    clock_gettime(CLOCK_MONOTONIC, ts);
+#endif
+}
+
+
 char * functab[65536]={0};
 
 void init_functab() {
@@ -389,7 +424,7 @@ static void run_emulator(void)
 	struct timespec now, next_time;
 
 	/*  */
-	clock_gettime(CLOCK_MONOTONIC, &now);
+	get_monotonic_time(&now);
 
 
 	//write6502(0x8, 0xff);
@@ -501,7 +536,7 @@ static void run_emulator(void)
 
 	}
 	if (show_compilation_time) {
-		clock_gettime(CLOCK_MONOTONIC, &next_time);
+		get_monotonic_time(&next_time);
 		next_time.tv_sec-=now.tv_sec;
 
 		if (next_time.tv_nsec < now.tv_nsec)
