@@ -5,6 +5,7 @@
 ### STATE:
  - Compiler works in 100% as original
  - Dynamic library linking may fail in some cases.
+ - Compiles by typing "make" on osx, linux and windows (if it does not, please let me know)
 
 **Atari Action Compiler** in a sandbox made of fake6502 (MOS 6502 Emulator in C) written in C.
 
